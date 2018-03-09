@@ -40,7 +40,7 @@ class ModelObserverProvider() extends ServiceProvider
     public function register()
     {
         $this->app->bind(ModelObserver::class, function(){
-            return new ModelObserver(new CustomMessageBuilder(), new CustomEventStoreMiddleware())
+            return new ModelObserver(new CustomMessageBuilder(new EventMessage()), new CustomEventStoreMiddleware())
         });
     }
 }
@@ -63,6 +63,12 @@ $ docker-compose run test
 To run interactively using [PsySH](http://psysh.org/):
 ``` bash
 $ docker-compose run psysh
+```
+
+To run phpunit tests, run the following command from the project folder:
+
+```bash
+$ docker-compose run phpunit
 ```
 
 License
