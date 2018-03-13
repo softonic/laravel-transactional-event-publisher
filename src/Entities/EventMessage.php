@@ -2,7 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher\Entities;
 
-class EventMessage
+class EventMessage implements \JsonSerializable
 {
     public $service;
 
@@ -26,9 +26,9 @@ class EventMessage
         return serialize($this->toArray());
     }
 
-    public function toJson()
+    public function jsonSerialize()
     {
-        return json_encode($this->toArray());
+        return $this->toArray();
     }
 
     /**
@@ -41,7 +41,7 @@ class EventMessage
             'eventName' => $this->eventName,
             'createdAt' => $this->createdAt,
             'payload' => $this->payload,
-            'meta' => $this->meta
+            'meta' => $this->meta,
         ];
     }
 }

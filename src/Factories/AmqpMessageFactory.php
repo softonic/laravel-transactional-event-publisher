@@ -16,7 +16,7 @@ class AmqpMessageFactory
      * Makes a AMQPMessage object.
      *
      * @param EventMessage $message
-     * @param null  $properties
+     * @param null         $properties
      *
      * @return \PhpAmqpLib\Message\AMQPMessage
      */
@@ -24,7 +24,7 @@ class AmqpMessageFactory
     {
         $this->checkMessage($message->toArray());
 
-        return new AMQPMessage($message->toJson(), $properties);
+        return new AMQPMessage(json_encode($message), $properties);
     }
 
     private function checkMessage($message)
