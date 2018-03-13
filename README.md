@@ -12,7 +12,6 @@ Laravel package to handle atomicity between Eloquent model operations and event 
 
 * Atomic transaction between Eloquent model operation, event generation and sent.
 * Events sent to a AMQP system
-* Chance of adding a custom Event message builder
 
 Documentation
 -------------
@@ -31,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
 }
 ```
 
-If you want you can pass your custom MessageBuilder and EventStoreMiddleware if you want. You can pass it your custom classes in the `ModelObserver` provider
+If you want you can pass your custom MessageBuilder and EventStoreMiddleware. You can pass it your custom classes in the `ModelObserver` provider
 
 ```
 ...
