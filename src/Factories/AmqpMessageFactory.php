@@ -15,19 +15,19 @@ class AmqpMessageFactory
     /**
      * Makes a AMQPMessage object.
      *
-     * @param EventMessage $message
-     * @param null         $properties
+     * @param EventMessage $eventMessage
+     * @param array        $properties
      *
      * @return \PhpAmqpLib\Message\AMQPMessage
      */
-    public function make(EventMessage $message, $properties = null)
+    public function make(EventMessage $eventMessage, array $properties = null)
     {
-        $this->checkMessage($message->toArray());
+        $this->checkMessage($eventMessage->toArray());
 
-        return new AMQPMessage(json_encode($message), $properties);
+        return new AMQPMessage(json_encode($eventMessage), $properties);
     }
 
-    private function checkMessage($message)
+    private function checkMessage(array $message)
     {
         if (0 == array_sum($message)) {
             throw new \LogicException('No message provided');

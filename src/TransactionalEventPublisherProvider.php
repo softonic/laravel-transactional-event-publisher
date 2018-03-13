@@ -25,7 +25,6 @@ class TransactionalEventPublisherProvider extends ServiceProvider
     /**
      * Bootstrap the application services.
      *
-     * @return void
      */
     public function boot()
     {
@@ -35,13 +34,11 @@ class TransactionalEventPublisherProvider extends ServiceProvider
             ],
             'config'
         );
-
     }
 
     /**
      * Register the application services.
      *
-     * @return void
      */
     public function register()
     {
@@ -54,5 +51,4 @@ class TransactionalEventPublisherProvider extends ServiceProvider
             );
         });
     }
-
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Softonic\TransactionalEventPublisher\Contracts;
 
 /**

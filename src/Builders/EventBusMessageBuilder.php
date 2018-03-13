@@ -22,7 +22,7 @@ class EventBusMessageBuilder implements MessageBuilderContract
     /**
      * {@inheritdoc}
      */
-    public function build($eventType, $modelName, $payload, $metas = [])
+    public function build($eventType, $modelName, $payload, array $metas = [])
     {
         $this->eventMessage->service = config('transactional-event-publisher.service');
         $this->eventMessage->eventType = $eventType;

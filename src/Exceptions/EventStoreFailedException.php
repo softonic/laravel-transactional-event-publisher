@@ -9,5 +9,4 @@ namespace Softonic\TransactionalEventPublisher\Exceptions;
  */
 class EventStoreFailedException extends \RuntimeException
 {
-
 }

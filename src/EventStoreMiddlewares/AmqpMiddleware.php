@@ -3,7 +3,6 @@
 namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
 use Bschmitt\Amqp\Amqp;
-use Illuminate\Contracts\Config\Repository;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Entities\EventMessage;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
@@ -46,7 +45,7 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
     {
         try {
             $this->amqp->publish(
-                $message->service . '.' .  $message->eventType . '.' . $message->modelName,
+                $message->service . '.' . $message->eventType . '.' . $message->modelName,
                 $this->messageFactory->make($message),
                 $this->properties
             );
