@@ -2,6 +2,8 @@
 
 return [
     'service' => 'service-name',
+    'middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
+    'message' =>  \Softonic\TransactionalEventPublisher\ValueObjects\EventMessage::class,
     'message_middleware' => 'amqp',
     'properties' => [
         'amqp' => [

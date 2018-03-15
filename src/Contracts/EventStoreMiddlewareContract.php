@@ -2,8 +2,6 @@
 
 namespace Softonic\TransactionalEventPublisher\Contracts;
 
-use Softonic\TransactionalEventPublisher\Entities\EventMessage;
-
 /**
  * Interface EventStoreMiddlewareContract
  *
@@ -14,9 +12,9 @@ interface EventStoreMiddlewareContract
     /**
      * Stores in the message-oriented middleware.
      *
-     * @param EventMessage $message
+     * @param \Softonic\TransactionalEventPublisher\Contracts\EventMessageContract $message
      *
      * @return mixed
      */
-    public function store(EventMessage $message);
+    public function store(EventMessageContract $message);
 }

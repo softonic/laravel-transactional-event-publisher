@@ -3,9 +3,10 @@
 namespace Softonic\TransactionalEventPublisher\Tests\EventStoreMiddlewares;
 
 use Bschmitt\Amqp\Amqp;
+use Illuminate\Database\Eloquent\Model;
 use PhpAmqpLib\Message\AMQPMessage;
 use PHPUnit\Framework\TestCase;
-use Softonic\TransactionalEventPublisher\Entities\EventMessage;
+use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 
@@ -13,7 +14,7 @@ class AmqpMiddlewareTest extends TestCase
 {
     public function testWhenStoringAMessageThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
     {
-        $message = new EventMessage();
+        $message = \Mockery::mock(EventMessage::class);
         $amqpMessage = new AMQPMessage();
         $properties = ['AMQP properties'];
 
@@ -36,7 +37,7 @@ class AmqpMiddlewareTest extends TestCase
 
     public function testWhenStoringAMessageShouldReturnTrue()
     {
-        $message = new EventMessage();
+        $message = \Mockery::mock(EventMessage::class);
         $properties = ['AMQP properties'];
         $message->service = 'service';
         $message->eventType = 'created';

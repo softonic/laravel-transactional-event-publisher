@@ -28,4 +28,4 @@ services:
       volumes:
         - ./:/app
       image: ricc/composer-prestissimo:latest
-      command: sleep 36000 #composer phpunit
+      command: composer phpunit

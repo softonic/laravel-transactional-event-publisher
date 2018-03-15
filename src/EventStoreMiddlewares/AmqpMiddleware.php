@@ -3,8 +3,8 @@
 namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
 use Bschmitt\Amqp\Amqp;
+use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
-use Softonic\TransactionalEventPublisher\Entities\EventMessage;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 
 /**
@@ -37,11 +37,11 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
     /**
      * Publishes the message to the AMQP Message broker.
      *
-     * @param EventMessage $message
+     * @param EventMessageContract $message
      *
      * @return bool
      */
-    public function store(EventMessage $message)
+    public function store(EventMessageContract $message)
     {
         try {
             $this->amqp->publish(

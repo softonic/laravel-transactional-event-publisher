@@ -3,6 +3,7 @@
 namespace Softonic\TransactionalEventPublisher\Observers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Mail\Message;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Contracts\MessageBuilderContract;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
@@ -14,20 +15,22 @@ use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
  */
 class ModelObserver
 {
-    private $messageBuilder;
-
     private $eventStoreMiddleware;
+
+    private $messageClass;
 
     /**
      * ModelObserver constructor.
      *
-     * @param \Softonic\TransactionalEventPublisher\Contracts\MessageBuilderContract       $messageBuilder
      * @param \Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract $eventStoreMiddleware
+     * @param string                                                                       $messageClass
      */
-    public function __construct(MessageBuilderContract $messageBuilder, EventStoreMiddlewareContract $eventStoreMiddleware)
-    {
-        $this->messageBuilder = $messageBuilder;
+    public function __construct(
+        EventStoreMiddlewareContract $eventStoreMiddleware,
+        $messageClass
+    ) {
         $this->eventStoreMiddleware = $eventStoreMiddleware;
+        $this->messageClass = $messageClass;
     }
 
     /**
@@ -111,8 +114,7 @@ class ModelObserver
     private function performStoreEventMessage(Model $model, $modelEvent)
     {
         $connection = $model->getConnection();
-        $classBasename = class_basename($model);
-        $message = $this->messageBuilder->build($classBasename, $modelEvent, $model->toArray());
+        $message = new $this->messageClass($model, $modelEvent);
 
         if (true === $this->eventStoreMiddleware->store($message)) {
             $connection->commit();

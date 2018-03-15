@@ -30,22 +30,38 @@ class AppServiceProvider extends ServiceProvider
 }
 ```
 
-If you want you can pass your custom MessageBuilder and EventStoreMiddleware. You can pass it your custom classes in the `ModelObserver` provider
+If you want you can pass your custom EventMessage and EventStoreMiddleware. You can pass it your custom classes in the `ModelObserver` provider
 
 ```
 ...
-class ModelObserverProvider() extends ServiceProvider
+class ModelObserverProvider extends ServiceProvider
 {
     public function register()
     {
-        $this->app->bind(ModelObserver::class, function(){
-            return new ModelObserver(new CustomMessageBuilder(new EventMessage()), new CustomEventStoreMiddleware())
+        $this->app->bind(ModelObserver::class, function () {
+            return new ModelObserver(
+                resolve(config('transactional-event-publisher.middleware')),
+                resolve(config('transactional-event-publisher.message'))
+            );
         });
     }
 }
 ```
 
-The `CustomMessageBuilder` must implements `MessageBuilderContract` and `CustomEventStoreMiddleware` must implements `EventStoreMiddlewareContract`
+The `transactional-event.message` class must implements `EventMessageContract` and `transactional-event.middleware` class must implements `EventStoreMiddlewareContract`
+
+Considerations
+==============
+
+This package begins a database transaction in the following Eloquent Model events:
+
+* creating
+* updating
+* deleting
+
+And commit the database transaction when the event store middleware stores the event message successfully. On the other hand, if the event store couldn't store the event message would be a database rollback for the two operations (Eloquent model write + event message storing).
+
+Take into account if an error occurs between the event of creating/updating/deleting and created/updated/deleted the transaction would remain started until the connection had been closed.
 
 
 Testing

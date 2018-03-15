@@ -3,7 +3,7 @@
 namespace Softonic\TransactionalEventPublisher\Factories;
 
 use PhpAmqpLib\Message\AMQPMessage;
-use Softonic\TransactionalEventPublisher\Entities\EventMessage;
+use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 
 /**
  * Class AmqpMessageFactory
@@ -15,12 +15,12 @@ class AmqpMessageFactory
     /**
      * Makes a AMQPMessage object.
      *
-     * @param EventMessage $eventMessage
+     * @param EventMessageContract $eventMessage
      * @param array        $properties
      *
      * @return \PhpAmqpLib\Message\AMQPMessage
      */
-    public function make(EventMessage $eventMessage, array $properties = null)
+    public function make(EventMessageContract $eventMessage, array $properties = null)
     {
         $this->checkMessage($eventMessage->toArray());
 
@@ -29,7 +29,7 @@ class AmqpMessageFactory
 
     private function checkMessage(array $message)
     {
-        if (0 == array_sum($message)) {
+        if (empty(array_filter($message))) {
             throw new \LogicException('No message provided');
         }
     }

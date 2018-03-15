@@ -4,8 +4,9 @@ namespace Softonic\TransactionalEventPublisher\Tests\Factories;
 
 use PhpAmqpLib\Message\AMQPMessage;
 use PHPUnit\Framework\TestCase;
-use Softonic\TransactionalEventPublisher\Entities\EventMessage;
+use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use phpmock\mockery\PHPMockery;
 
 class AmqpMessageFactoryTest extends TestCase
 {
@@ -17,19 +18,27 @@ class AmqpMessageFactoryTest extends TestCase
     {
         $factory = new AmqpMessageFactory();
 
-        $factory->make(new EventMessage());
+        $eventMessageMock = \Mockery::mock(EventMessage::class);
+        $eventMessageMock->shouldReceive('toArray')->once()->andReturn([]);
+
+        $factory->make($eventMessageMock);
     }
 
     public function testWhenRoutingKeyProvidedAndMessageShouldCreateAnAMQPMessageObject()
     {
         $factory = new AmqpMessageFactory();
-        $eventMessage = new EventMessage();
+        $eventMessage = \Mockery::mock(EventMessage::class);
+        $eventMessage
+            ->shouldReceive('toArray')
+            ->andReturn(['service' => 'service', 'eventName' => 'created']);
+
+        PHPMockery::mock('Softonic\TransactionalEventPublisher\Factories', "json_encode")
+            ->andReturn('json encoded string message');
 
         $eventMessage->service = 'service';
         $eventMessage->eventName = 'created';
         $eventMessage->createdAt = '2018-02-01 21:00:01';
         $eventMessage->payload = 'payload data';
-        $eventMessage->meta = ['meta_1' => 'meta value'];
 
         $amqpMessage = $factory->make($eventMessage);
 
