@@ -6,7 +6,6 @@ use Illuminate\Database\Connectors\MySqlConnector;
 use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\TestCase;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
-use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
 
 class ModelObserverTest extends TestCase

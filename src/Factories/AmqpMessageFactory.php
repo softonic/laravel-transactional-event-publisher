@@ -16,7 +16,7 @@ class AmqpMessageFactory
      * Makes a AMQPMessage object.
      *
      * @param EventMessageContract $eventMessage
-     * @param array        $properties
+     * @param array                $properties
      *
      * @return \PhpAmqpLib\Message\AMQPMessage
      */

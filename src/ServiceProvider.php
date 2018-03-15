@@ -42,7 +42,7 @@ class ServiceProvider extends LaravelServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/' . $this->packageName . '.php', $this->packageName);
 
-        $this->app->bind(AmqpMiddleware::class, function(){
+        $this->app->bind(AmqpMiddleware::class, function () {
             return new AmqpMiddleware(new AmqpMessageFactory(), new Amqp(), config('transactional-event.publisher.properties.amqp'));
         });
 

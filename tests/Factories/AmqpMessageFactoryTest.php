@@ -3,10 +3,10 @@
 namespace Softonic\TransactionalEventPublisher\Tests\Factories;
 
 use PhpAmqpLib\Message\AMQPMessage;
-use PHPUnit\Framework\TestCase;
-use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
-use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use phpmock\mockery\PHPMockery;
+use PHPUnit\Framework\TestCase;
+use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class AmqpMessageFactoryTest extends TestCase
 {
@@ -32,7 +32,7 @@ class AmqpMessageFactoryTest extends TestCase
             ->shouldReceive('toArray')
             ->andReturn(['service' => 'service', 'eventName' => 'created']);
 
-        PHPMockery::mock('Softonic\TransactionalEventPublisher\Factories', "json_encode")
+        PHPMockery::mock('Softonic\TransactionalEventPublisher\Factories', 'json_encode')
             ->andReturn('json encoded string message');
 
         $eventMessage->service = 'service';
