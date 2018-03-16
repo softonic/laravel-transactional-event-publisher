@@ -28,7 +28,7 @@ class ServiceProvider extends LaravelServiceProvider
     {
         $this->publishes(
             [
-                __DIR__ . '/../../config/' . $this->packageName . '.php' => config_path($this->packageName . '.php'),
+                __DIR__ . '/../config/' . $this->packageName . '.php' => config_path($this->packageName . '.php'),
             ],
             'config'
         );
@@ -40,16 +40,16 @@ class ServiceProvider extends LaravelServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__ . '/../../config/' . $this->packageName . '.php', $this->packageName);
+        $this->mergeConfigFrom(__DIR__ . '/../config/' . $this->packageName . '.php', $this->packageName);
 
         $this->app->bind(AmqpMiddleware::class, function () {
-            return new AmqpMiddleware(new AmqpMessageFactory(), new Amqp(), config('transactional-event.publisher.properties.amqp'));
+            return new AmqpMiddleware(new AmqpMessageFactory(), new Amqp(), config('transactional-event-publisher.properties.amqp'));
         });
 
         $this->app->bind(ModelObserver::class, function () {
             return new ModelObserver(
                 resolve(config('transactional-event-publisher.middleware')),
-                resolve(config('transactional-event-publisher.message'))
+                config('transactional-event-publisher.message')
             );
         });
     }

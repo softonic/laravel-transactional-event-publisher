@@ -3,7 +3,6 @@
 namespace Softonic\TransactionalEventPublisher\Observers;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Mail\Message;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 

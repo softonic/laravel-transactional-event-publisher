@@ -30,24 +30,6 @@ class AppServiceProvider extends ServiceProvider
 }
 ```
 
-If you want you can pass your custom EventMessage and EventStoreMiddleware. You can pass it your custom classes in the `ModelObserver` provider
-
-```
-...
-class ModelObserverProvider extends ServiceProvider
-{
-    public function register()
-    {
-        $this->app->bind(ModelObserver::class, function () {
-            return new ModelObserver(
-                resolve(config('transactional-event-publisher.middleware')),
-                resolve(config('transactional-event-publisher.message'))
-            );
-        });
-    }
-}
-```
-
 The `transactional-event.message` class must implements `EventMessageContract` and `transactional-event.middleware` class must implements `EventStoreMiddlewareContract`
 
 Considerations
