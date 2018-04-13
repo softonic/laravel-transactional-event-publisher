@@ -32,6 +32,13 @@ class ServiceProvider extends LaravelServiceProvider
             ],
             'config'
         );
+
+        $this->publishes(
+            [
+                __DIR__ . '/../database/migrations/' => database_path('migrations'),
+            ],
+            'migrations'
+        );
     }
 
     /**
@@ -43,7 +50,11 @@ class ServiceProvider extends LaravelServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../config/' . $this->packageName . '.php', $this->packageName);
 
         $this->app->bind(AmqpMiddleware::class, function () {
-            return new AmqpMiddleware(new AmqpMessageFactory(), new Amqp(), config('transactional-event-publisher.properties.amqp'));
+            return new AmqpMiddleware(
+                new AmqpMessageFactory(),
+                new Amqp(),
+                config('transactional-event-publisher.properties.amqp')
+            );
         });
 
         $this->app->bind(ModelObserver::class, function () {

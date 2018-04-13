@@ -1,18 +1,16 @@
 <?php
 
-namespace Softonic\TransactionalEventPublisher\Tests\Observers;
+namespace Softonic\TransactionalEventPublisher\Observers;
 
 use Illuminate\Database\Connectors\MySqlConnector;
 use Illuminate\Database\Eloquent\Model;
-use PHPUnit\Framework\TestCase;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
-use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
+use Softonic\TransactionalEventPublisher\TestCase;
 
 class ModelObserverTest extends TestCase
 {
-    public function testWhenANewItemIsCreatedShouldSendAnEventMessage()
+    public function testWhenANewItemIsCreatedShouldStoreTheEventMessage()
     {
-        $payload = ['id' => 123, 'field' => 'value 1'];
         $eventStoreResult = true;
 
         $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
@@ -20,7 +18,6 @@ class ModelObserverTest extends TestCase
         $mySqlConnectorMock->shouldReceive('commit')->once();
 
         $modelMock = \Mockery::mock(Model::class);
-        $modelMock->shouldReceive('toArray')->once()->andReturn($payload);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
@@ -44,7 +41,6 @@ class ModelObserverTest extends TestCase
      */
     public function testWhenANewItemIsCreatedButTheEventStoreFailsWhenStoring()
     {
-        $payload = ['id' => 123, 'field' => 'value 1'];
         $eventStoreResult = false;
 
         $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
@@ -52,7 +48,6 @@ class ModelObserverTest extends TestCase
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
 
         $modelMock = \Mockery::mock(Model::class);
-        $modelMock->shouldReceive('toArray')->once()->andReturn($payload);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
@@ -70,9 +65,8 @@ class ModelObserverTest extends TestCase
         $modelObserver->created($modelMock);
     }
 
-    public function testWhenAnItemIsUpdatedShouldSendAnEventMessage()
+    public function testWhenAnItemIsUpdatedShouldStoreTheEventMessage()
     {
-        $payload = ['id' => 123, 'field' => 'value 1'];
         $eventStoreResult = true;
 
         $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
@@ -80,7 +74,6 @@ class ModelObserverTest extends TestCase
         $mySqlConnectorMock->shouldReceive('commit')->once();
 
         $modelMock = \Mockery::mock(Model::class);
-        $modelMock->shouldReceive('toArray')->once()->andReturn($payload);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
@@ -104,7 +97,6 @@ class ModelObserverTest extends TestCase
      */
     public function testWhenAnItemIsUpdatedButTheEventStoreFailsWhenStoring()
     {
-        $payload = ['id' => 123, 'field' => 'value 1'];
         $eventStoreResult = false;
 
         $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
@@ -112,7 +104,6 @@ class ModelObserverTest extends TestCase
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
 
         $modelMock = \Mockery::mock(Model::class);
-        $modelMock->shouldReceive('toArray')->once()->andReturn($payload);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
@@ -130,9 +121,8 @@ class ModelObserverTest extends TestCase
         $modelObserver->updated($modelMock);
     }
 
-    public function testWhenAnItemDeletedShouldSendAnEventMessage()
+    public function testWhenAnItemDeletedShouldStoreTheEventMessage()
     {
-        $payload = ['id' => 123, 'field' => 'value 1'];
         $eventStoreResult = true;
 
         $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
@@ -140,7 +130,6 @@ class ModelObserverTest extends TestCase
         $mySqlConnectorMock->shouldReceive('commit')->once();
 
         $modelMock = \Mockery::mock(Model::class);
-        $modelMock->shouldReceive('toArray')->once()->andReturn($payload);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
@@ -164,7 +153,6 @@ class ModelObserverTest extends TestCase
      */
     public function testWhenAnItemIsDeletedButTheEventStoreFailsWhenStoring()
     {
-        $payload = ['id' => 123, 'field' => 'value 1'];
         $eventStoreResult = false;
 
         $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
@@ -172,7 +160,6 @@ class ModelObserverTest extends TestCase
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
 
         $modelMock = \Mockery::mock(Model::class);
-        $modelMock->shouldReceive('toArray')->once()->andReturn($payload);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
@@ -188,5 +175,44 @@ class ModelObserverTest extends TestCase
 
         $modelObserver->deleting($modelMock);
         $modelObserver->deleted($modelMock);
+    }
+
+    public function testWhenItemIsCreatedWithMultipleMiddlewaresShouldStoreTheEventMessagesInAllTheMiddlewares()
+    {
+        $eventStoreResult = true;
+
+        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
+        $mySqlConnectorMock->shouldReceive('commit')->once();
+
+        $modelMock = \Mockery::mock(Model::class);
+        $modelMock
+            ->shouldReceive('getConnection')
+            ->times(2)
+            ->andReturn($mySqlConnectorMock);
+
+        $firstEventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $firstEventStoreMiddlewareMock
+            ->shouldReceive('store')
+            ->once()
+            ->andReturn($eventStoreResult);
+
+        $secondEventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $secondEventStoreMiddlewareMock
+            ->shouldReceive('store')
+            ->once()
+            ->andReturn($eventStoreResult);
+
+        $modelObserver = new ModelObserver(
+            [
+                $firstEventStoreMiddlewareMock,
+                $secondEventStoreMiddlewareMock,
+            ],
+            EventMessageStub::class
+        );
+
+        $modelObserver->creating($modelMock);
+
+        $this->assertTrue($modelObserver->created($modelMock));
     }
 }

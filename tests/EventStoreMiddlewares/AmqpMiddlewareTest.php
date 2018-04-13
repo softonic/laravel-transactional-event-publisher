@@ -3,11 +3,10 @@
 namespace Softonic\TransactionalEventPublisher\Tests\EventStoreMiddlewares;
 
 use Bschmitt\Amqp\Amqp;
-use Illuminate\Database\Eloquent\Model;
 use PhpAmqpLib\Message\AMQPMessage;
-use PHPUnit\Framework\TestCase;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use Softonic\TransactionalEventPublisher\TestCase;
 use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class AmqpMiddlewareTest extends TestCase

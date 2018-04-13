@@ -36,12 +36,12 @@ return [
     */
     'properties' => [
         'amqp' => [
-            'host'                => 'localhost',
-            'port'                => 5672,
-            'username'            => 'rabbitmq-user',
-            'password'            => 'rabbitmq-password',
-            'vhost'               => 'rabbitmq-vhost',
-            'exchange'            => 'rabbitmq-exchange',
+            'host'                => env('AMQP_HOST', 'localhost'),
+            'port'                => env('AMQP_PORT',5672),
+            'username'            => env('AMQP_USER','guest'),
+            'password'            => env('AMQP_PASSWORD','guest'),
+            'vhost'               => env('AMQP_VHOST', 'domain-events'),
+            'exchange'            => env('AMQP_EXCHANGE', 'domain-events'),
             'exchange_type'       => 'topic',
             'exchange_durable'    => true,
             'consumer_tag'        => 'consumer',

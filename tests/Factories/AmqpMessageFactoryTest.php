@@ -1,11 +1,10 @@
 <?php
 
-namespace Softonic\TransactionalEventPublisher\Tests\Factories;
+namespace Softonic\TransactionalEventPublisher\Factories;
 
 use PhpAmqpLib\Message\AMQPMessage;
 use phpmock\mockery\PHPMockery;
-use PHPUnit\Framework\TestCase;
-use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use Softonic\TransactionalEventPublisher\TestCase;
 use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class AmqpMessageFactoryTest extends TestCase

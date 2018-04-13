@@ -8,15 +8,40 @@ Laravel Transactional Event Publisher
 [![Quality Score](https://img.shields.io/scrutinizer/g/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](https://scrutinizer-ci.com/g/softonic/laravel-transactional-event-publisher)
 [![Total Downloads](https://img.shields.io/packagist/dt/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](https://packagist.org/packages/softonic/laravel-transactional-event-publisher)
 
-Laravel package to handle atomicity between Eloquent model operations and event message generation and storing linked to this model operation. Main features:
+Laravel package to handle atomicity between Eloquent model operations and domain event message generation. 
 
-* Atomic transaction between Eloquent model operation, event generation and sent.
-* Events sent to a AMQP system
-
-Documentation
+Main features
 -------------
 
-To add the Observer generates and sends to the event Store just add it in the `boot()` method of `AppServiceProvider` class
+* Ensure every action has a domain event sent using an atomic transaction between Eloquent model operation, event generation and sent.
+* Events sent to a AMQP system sync or async
+
+Installation
+-------------
+
+You can require the last version of the package using composer
+```bash
+composer require softonic/laravel-transactional-event-publisher
+```
+
+### Configuration
+
+It is possible to configure the basic AMQP information, you can check it in `vendor/softonic/transactional-event-publisher.php/config/transactional-event-publisher.php` 
+
+If you need further customization, you can publish the configuration.
+```bash
+php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\ServiceProvider"
+```
+
+We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware` and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncAmqpMiddleware` middlewares to send events two AMQP.
+The differeces between both is that AmqpMiddleware send the domain events sync while if you use the AsyncAmqpMiddleware
+it will send the domain events using a Job.
+
+### Registering Models
+
+To choose what models should send domain events, you need to attach the `\Softonic\TransactionalEventPublisher\ModelObserver` observer class.
+
+Example:
 
 ```
 ...
@@ -29,6 +54,13 @@ class AppServiceProvider extends ServiceProvider
     ...
 }
 ```
+
+### Custom middlewares
+
+The middlewares should implement the `Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract` interface.
+Its purpose is store the domain event provided, so you can implement any storage for domain events.
+
+### Custom messages
 
 The `transactional-event.message` class must implements `EventMessageContract` and `transactional-event.middleware` class must implements `EventStoreMiddlewareContract`
 

@@ -26,7 +26,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Softonic\\TransactionalEventPublisher\\Tests\\": "tests/"
+      "Softonic\\TransactionalEventPublisher\\": "tests/"
     }
   },
   "scripts": {
