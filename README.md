@@ -30,12 +30,45 @@ It is possible to configure the basic AMQP information, you can check it in `ven
 
 If you need further customization, you can publish the configuration.
 ```bash
-php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\ServiceProvider"
+php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\ServiceProvider" --tag=config
 ```
 
-We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware` and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncAmqpMiddleware` middlewares to send events two AMQP.
-The differeces between both is that AmqpMiddleware send the domain events sync while if you use the AsyncAmqpMiddleware
-it will send the domain events using a Job.
+We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware`, 
+ `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware` 
+ and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncAmqpMiddleware` middlewares to send events two AMQP.
+
+#### Sync AMQP middleware 
+
+To use the sync AMQP you jsut need to configure the AMQP connection using the configuration file or environmental variables.
+ 
+#### Async AMQP middleware
+
+You need to do the Sync AMQP middleware steps and continue with these:
+
+* Create the job table if you don't have it in the project
+```bash
+php artisan queue:table
+php artisan migrate
+```
+* Run a worker to actually send the events
+```bash
+php artisan queue:work --queue=domainEvents
+```
+
+The job table is needed because to ensure that a job is dispatched after an action, we need to do a transaction, so the job must use the database driver.
+
+#### Database middleware
+
+This middleware just store the events in a table in database. It can be useful if you want to expose the events as a REST endpoint or check your events history.
+
+To configure this middleware you need to publish the migrations
+```bash
+php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\ServiceProvider" --tag=migrations
+```
+and execute the migrations
+```bash
+php artisan migrate
+```
 
 ### Registering Models
 
