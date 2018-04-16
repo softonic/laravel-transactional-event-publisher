@@ -3,6 +3,7 @@
 namespace Softonic\TransactionalEventPublisher;
 
 use Bschmitt\Amqp\Amqp;
+use Illuminate\Log\Logger;
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
@@ -53,13 +54,24 @@ class ServiceProvider extends LaravelServiceProvider
             return new AmqpMiddleware(
                 new AmqpMessageFactory(),
                 new Amqp(),
-                config('transactional-event-publisher.properties.amqp')
+                config('transactional-event-publisher.properties.amqp'),
+                resolve(Logger::class)
             );
         });
 
         $this->app->bind(ModelObserver::class, function () {
+            $middlewareClasses = config('transactional-event-publisher.middleware');
+            if (!is_array($middlewareClasses)) {
+                $middlewareClasses = [$middlewareClasses];
+            }
+
+            $middlewares = [];
+            foreach($middlewareClasses as $middlewareClass) {
+                $middlewares[] = resolve($middlewareClass);
+            }
+
             return new ModelObserver(
-                resolve(config('transactional-event-publisher.middleware')),
+                $middlewares,
                 config('transactional-event-publisher.message')
             );
         });

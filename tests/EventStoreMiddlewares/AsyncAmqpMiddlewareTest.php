@@ -37,7 +37,7 @@ class AsyncAmqpMiddlewareTest extends TestCase
         $commandBus->shouldReceive('dispatch')
             ->once()
             ->withArgs(function($job) {
-                return $job instanceof SendDomainEvents && 'domainEvents' == $job->queue;
+                return $job instanceof SendDomainEvents;
             });
 
         $this->assertTrue($asyncAmqpMiddleware->store($eventMessage));

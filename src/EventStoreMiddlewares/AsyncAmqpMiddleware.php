@@ -30,7 +30,6 @@ class AsyncAmqpMiddleware implements EventStoreMiddlewareContract
     {
         try {
             $job = new SendDomainEvents($message);
-            $job->onQueue('domainEvents');
 
             $this->dispatcher->dispatch($job);
 

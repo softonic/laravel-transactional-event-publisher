@@ -6,7 +6,7 @@ return [
     | Service name that belongs the event messages produced.
     |--------------------------------------------------------------------------
     */
-    'service' => 'service-name',
+    'service' => env('SERVICE_NAME'),
 
     /*
     |--------------------------------------------------------------------------
@@ -21,13 +21,6 @@ return [
     |--------------------------------------------------------------------------
     */
     'message' =>  \Softonic\TransactionalEventPublisher\ValueObjects\EventMessage::class,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Message middleware. At this moment just an AMQP system.
-    |--------------------------------------------------------------------------
-    */
-    'message_middleware' => 'amqp',
 
     /*
     |--------------------------------------------------------------------------
