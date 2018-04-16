@@ -35,11 +35,11 @@ php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\Serv
 
 We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware`, 
  `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware` 
- and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncAmqpMiddleware` middlewares to send events two AMQP.
+ and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncAmqpMiddleware` middlewares to send events.
 
 #### Sync AMQP middleware 
 
-To use the sync AMQP you jsut need to configure the AMQP connection using the configuration file or environmental variables.
+To use the sync AMQP you just need to configure the AMQP connection using the configuration file or environmental variables.
  
 #### Async AMQP middleware
 
