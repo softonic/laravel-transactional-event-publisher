@@ -3,20 +3,24 @@
 namespace Softonic\TransactionalEventPublisher\Tests\EventStoreMiddlewares;
 
 use Bschmitt\Amqp\Amqp;
-use Illuminate\Database\Eloquent\Model;
 use PhpAmqpLib\Message\AMQPMessage;
-use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use Softonic\TransactionalEventPublisher\TestCase;
 use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class AmqpMiddlewareTest extends TestCase
 {
     public function testWhenStoringAMessageThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
     {
-        $message = \Mockery::mock(EventMessage::class);
+        $message     = \Mockery::mock(EventMessage::class);
         $amqpMessage = new AMQPMessage();
-        $properties = ['AMQP properties'];
+        $properties  = ['AMQP properties'];
+
+        $logger = \Mockery::mock(LoggerInterface::class);
+        $logger->shouldReceive('error')
+            ->once();
 
         $amqpMessageFactory = \Mockery::mock(AmqpMessageFactory::class);
         $amqpMessageFactory
@@ -30,19 +34,25 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andThrow('\Exception');
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpMiddleware = new AmqpMiddleware(
+            $amqpMessageFactory,
+            $amqpMock,
+            $properties,
+            $logger
+        );
 
         $this->assertFalse($amqpMiddleware->store($message));
     }
 
     public function testWhenStoringAMessageShouldReturnTrue()
     {
-        $message = \Mockery::mock(EventMessage::class);
-        $properties = ['AMQP properties'];
-        $message->service = 'service';
+        $message            = \Mockery::mock(EventMessage::class);
+        $properties         = ['AMQP properties'];
+        $logger             = \Mockery::mock(LoggerInterface::class);
+        $message->service   = 'service';
         $message->eventType = 'created';
         $message->modelName = 'model';
-        $amqpMessage = new AMQPMessage();
+        $amqpMessage        = new AMQPMessage();
 
         $amqpMock = \Mockery::mock(Amqp::class);
         $amqpMock
@@ -56,7 +66,7 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties, $logger);
 
         $this->assertTrue($amqpMiddleware->store($message));
     }

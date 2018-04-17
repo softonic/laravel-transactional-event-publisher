@@ -20,15 +20,15 @@ class ModelObserver
     /**
      * ModelObserver constructor.
      *
-     * @param \Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract $eventStoreMiddleware
-     * @param string                                                                       $messageClass
+     * @param EventStoreMiddlewareContract | EventStoreMiddlewareContract[] $eventStoreMiddleware
+     * @param string                                                        $messageClass
      */
     public function __construct(
-        EventStoreMiddlewareContract $eventStoreMiddleware,
+        $eventStoreMiddleware,
         $messageClass
     ) {
-        $this->eventStoreMiddleware = $eventStoreMiddleware;
-        $this->messageClass = $messageClass;
+        $this->eventStoreMiddleware = is_array($eventStoreMiddleware) ? $eventStoreMiddleware : [$eventStoreMiddleware];
+        $this->messageClass         = $messageClass;
     }
 
     /**
@@ -112,13 +112,28 @@ class ModelObserver
     private function performStoreEventMessage(Model $model, $modelEvent)
     {
         $connection = $model->getConnection();
-        $message = new $this->messageClass($model, $modelEvent);
+        $message    = new $this->messageClass($model, $modelEvent);
 
-        if (true === $this->eventStoreMiddleware->store($message)) {
+        if (true === $this->executeMiddlewares($message)) {
             $connection->commit();
         } else {
             $connection->rollBack();
             throw new EventStoreFailedException('Event Store failed when storing event message');
         }
+    }
+
+    /**
+     * @param $message
+     *
+     * @return mixed
+     */
+    private function executeMiddlewares($message): bool
+    {
+        $success = true;
+        foreach($this->eventStoreMiddleware as $middleware) {
+            $success &= $middleware->store($message);
+        }
+
+        return $success;
     }
 }

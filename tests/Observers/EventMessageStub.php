@@ -1,6 +1,6 @@
 <?php
 
-namespace Softonic\TransactionalEventPublisher\Tests\Observers;
+namespace Softonic\TransactionalEventPublisher\Observers;
 
 use Illuminate\Database\Eloquent\Model;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
