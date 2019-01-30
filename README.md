@@ -39,7 +39,8 @@ We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddl
 
 #### Sync AMQP middleware 
 
-To use the sync AMQP you just need to configure the AMQP connection using the configuration file or environmental variables.
+To use the sync AMQP you just need to configure the AMQP connection using the configuration file or environmental variables. 
+As you could see, in the configuration you won't be able to define a queue. This is because the library just publishes the message to an exchange and is the events collector responsability to declare the needed queues with the needed bindings.
  
 #### Async AMQP middleware
 
@@ -52,10 +53,10 @@ php artisan migrate
 ```
 * Run a worker to actually send the events
 ```bash
-php artisan queue:work --queue=domainEvents
+php artisan queue:work database --queue=domainEvents
 ```
 
-The job table is needed because to ensure that a job is dispatched after an action, we need to do a transaction, so the job must use the database driver.
+The job table is needed because to ensure that a job is dispatched after an action, we need to do a transaction, so the *job must use the database driver*.
 
 #### Database middleware
 
@@ -78,11 +79,14 @@ Example:
 
 ```
 ...
+
+use App\Post as MyModel;
+
 class AppServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        ModelToSendEvents::observe(\Softonic\TransactionalEventPublisher\ModelObserver::class);
+        MyModel::observe(\Softonic\TransactionalEventPublisher\Observers\ModelObserver::class);
     }
     ...
 }
