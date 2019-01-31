@@ -24,7 +24,7 @@ class SendDomainEvents implements ShouldQueue
     /**
      * @var integer $retry
      */
-    private $retry = 0;
+    private $retry;
 
     /**
      * @var Dispatcher $dispatcher
