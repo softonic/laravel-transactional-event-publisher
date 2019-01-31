@@ -53,12 +53,12 @@ php artisan migrate
 ```
 * Run a worker to actually send the events
 ```bash
-php artisan queue:work database --queue=retryDomainEvent,domainEvents
+php artisan queue:work database --timeout=350 --queue=retryDomainEvent,domainEvents
 ```
 
 The job table is needed because to ensure that a job is dispatched after an action, we need to do a transaction, so the *job must use the database driver*.
 
-There are two queues so the library is able to retry a job without losing order in the jobs.
+There are two queues so the library is able to retry a job without losing order in the jobs. The retry uses exponential backoff, so the timeout should be bigger than that plus the processing time. The maximmum amount of time from exponential backoff is 324 (18^2) seconds.
 
 #### Database middleware
 
