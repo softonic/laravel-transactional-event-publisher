@@ -53,10 +53,12 @@ php artisan migrate
 ```
 * Run a worker to actually send the events
 ```bash
-php artisan queue:work database --queue=domainEvents
+php artisan queue:work database --queue=retryDomainEvent,domainEvents
 ```
 
 The job table is needed because to ensure that a job is dispatched after an action, we need to do a transaction, so the *job must use the database driver*.
+
+There are two queues so the library is able to retry a job without losing order in the jobs.
 
 #### Database middleware
 
