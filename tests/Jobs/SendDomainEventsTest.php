@@ -9,7 +9,8 @@ use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\TestCase;
 
-function sleep($time) {
+function sleep($time)
+{
     SendDomainEventsTest::$functions->sleep($time);
 }
 

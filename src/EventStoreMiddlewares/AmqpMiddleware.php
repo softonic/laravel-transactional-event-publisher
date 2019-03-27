@@ -83,9 +83,10 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
         if (isset($this->properties['routing_key_fields'])) {
             $routingKey = implode(
                 '.',
-                array_map(function($key) use ($message){
+                array_map(function ($key) use ($message) {
                     return $message->$key;
-            }, $this->properties['routing_key_fields']));
+                }, $this->properties['routing_key_fields'])
+            );
         }
 
         return strtolower($routingKey);

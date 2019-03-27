@@ -75,7 +75,7 @@ class AmqpMiddlewareTest extends TestCase
     {
         $message            = \Mockery::mock(EventMessage::class);
         $properties         = [
-            'routing_key_fields'  => ['site', 'service', 'eventType', 'modelName']
+            'routing_key_fields'  => ['site', 'service', 'eventType', 'modelName'],
         ];
         $logger             = \Mockery::mock(LoggerInterface::class);
         $message->site      = 'softonic';
