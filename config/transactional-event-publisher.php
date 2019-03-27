@@ -43,7 +43,7 @@ return [
             'queue_properties'    => [ 'x-ha-policy' => [ 'S', 'all' ] ],
             'exchange_properties' => [ ],
             'timeout'             => 0,
-            'routing_key_fields'  => ['service', 'eventType', 'modelName'],
+            'routing_key_fields'  => ['service', 'eventType', 'modelName'], // You can use any of the public attributes of your message, they are merged with '.'
         ],
     ],
 ];
