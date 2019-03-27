@@ -43,6 +43,7 @@ return [
             'queue_properties'    => [ 'x-ha-policy' => [ 'S', 'all' ] ],
             'exchange_properties' => [ ],
             'timeout'             => 0,
+            'routing_key_fields'  => ['service', 'eventType', 'modelName'],
         ],
     ],
 ];

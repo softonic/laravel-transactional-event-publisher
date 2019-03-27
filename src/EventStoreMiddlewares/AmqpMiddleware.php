@@ -57,7 +57,7 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
     {
         try {
             $this->amqp->publish(
-                $message->service . '.' . $message->eventType . '.' . $message->modelName,
+                $this->getRoutingKey($message),
                 $this->messageFactory->make($message),
                 $this->properties
             );
@@ -67,5 +67,27 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
             $this->logger->error($e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Returns the messsage routing key based in the configured parameters
+     * or a default value based in service, eventType and modelName.
+     *
+     * @param EventMessageContract $message
+     *
+     * @return string
+     */
+    private function getRoutingKey(EventMessageContract $message): string
+    {
+        $routingKey = $message->service . '.' . $message->eventType . '.' . $message->modelName;
+        if (isset($this->properties['routing_key_fields'])) {
+            $routingKey = implode(
+                '.',
+                array_map(function($key) use ($message){
+                    return $message->$key;
+            }, $this->properties['routing_key_fields']));
+        }
+
+        return strtolower($routingKey);
     }
 }
