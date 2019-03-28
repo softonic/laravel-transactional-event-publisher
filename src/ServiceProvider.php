@@ -66,7 +66,7 @@ class ServiceProvider extends LaravelServiceProvider
             }
 
             $middlewares = [];
-            foreach($middlewareClasses as $middlewareClass) {
+            foreach ($middlewareClasses as $middlewareClass) {
                 $middlewares[] = resolve($middlewareClass);
             }
 

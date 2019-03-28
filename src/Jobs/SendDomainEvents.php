@@ -22,7 +22,7 @@ class SendDomainEvents implements ShouldQueue
     private $eventMessage;
 
     /**
-     * @var integer $retry
+     * @var int $retry
      */
     private $retry;
 
@@ -35,6 +35,7 @@ class SendDomainEvents implements ShouldQueue
      * Create a new job instance.
      *
      * @param EventMessageContract $eventMessage
+     * @param mixed                $retry
      */
     public function __construct(EventMessageContract $eventMessage, $retry = 0)
     {

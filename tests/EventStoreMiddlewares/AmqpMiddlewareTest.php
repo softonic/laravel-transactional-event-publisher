@@ -51,7 +51,7 @@ class AmqpMiddlewareTest extends TestCase
         $logger             = \Mockery::mock(LoggerInterface::class);
         $message->service   = 'service';
         $message->eventType = 'created';
-        $message->modelName = 'model';
+        $message->modelName = 'Model';
         $amqpMessage        = new AMQPMessage();
 
         $amqpMock = \Mockery::mock(Amqp::class);
@@ -59,6 +59,36 @@ class AmqpMiddlewareTest extends TestCase
             ->shouldReceive('publish')
             ->once()
             ->with('service.created.model', $amqpMessage, $properties);
+
+        $amqpMessageFactory = \Mockery::mock(AmqpMessageFactory::class);
+        $amqpMessageFactory
+            ->shouldReceive('make')
+            ->once()
+            ->andReturn($amqpMessage);
+
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties, $logger);
+
+        $this->assertTrue($amqpMiddleware->store($message));
+    }
+
+    public function testConfigurableRoutingKey()
+    {
+        $message            = \Mockery::mock(EventMessage::class);
+        $properties         = [
+            'routing_key_fields'  => ['site', 'service', 'eventType', 'modelName'],
+        ];
+        $logger             = \Mockery::mock(LoggerInterface::class);
+        $message->site      = 'softonic';
+        $message->service   = 'service';
+        $message->eventType = 'created';
+        $message->modelName = 'Model';
+        $amqpMessage        = new AMQPMessage();
+
+        $amqpMock = \Mockery::mock(Amqp::class);
+        $amqpMock
+            ->shouldReceive('publish')
+            ->once()
+            ->with('softonic.service.created.model', $amqpMessage, $properties);
 
         $amqpMessageFactory = \Mockery::mock(AmqpMessageFactory::class);
         $amqpMessageFactory

@@ -36,7 +36,7 @@ class AsyncAmqpMiddlewareTest extends TestCase
 
         $commandBus->shouldReceive('dispatch')
             ->once()
-            ->withArgs(function($job) {
+            ->withArgs(function ($job) {
                 return $job instanceof SendDomainEvents;
             });
 

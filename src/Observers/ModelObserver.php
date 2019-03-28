@@ -130,7 +130,7 @@ class ModelObserver
     private function executeMiddlewares($message): bool
     {
         $success = true;
-        foreach($this->eventStoreMiddleware as $middleware) {
+        foreach ($this->eventStoreMiddleware as $middleware) {
             $success &= $middleware->store($message);
         }
 
