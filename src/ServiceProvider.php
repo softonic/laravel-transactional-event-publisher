@@ -5,6 +5,7 @@ namespace Softonic\TransactionalEventPublisher;
 use Bschmitt\Amqp\Amqp;
 use Illuminate\Log\Logger;
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
+use Softonic\TransactionalEventPublisher\Console\Commands\EmitAllEvents;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
@@ -75,5 +76,7 @@ class ServiceProvider extends LaravelServiceProvider
                 config('transactional-event-publisher.message')
             );
         });
+
+        $this->commands([EmitAllEvents::class]);
     }
 }

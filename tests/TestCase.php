@@ -2,11 +2,17 @@
 
 namespace Softonic\TransactionalEventPublisher;
 
-use PHPUnit\Framework\TestCase as BaseTestCase;
+use Orchestra\Testbench\TestCase as TestbenchTestCase;
 
-abstract class TestCase extends BaseTestCase
+class TestCase extends TestbenchTestCase
 {
-    public function tearDown()
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->withFactories(__DIR__ . '/../database/factories');
+    }
+
+    public function tearDown(): void
     {
         if (class_exists('Mockery')) {
             if ($container = \Mockery::getContainer()) {

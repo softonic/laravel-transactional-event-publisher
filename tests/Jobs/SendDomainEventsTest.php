@@ -18,7 +18,7 @@ class SendDomainEventsTest extends TestCase
 {
     public static $functions;
 
-    protected function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
