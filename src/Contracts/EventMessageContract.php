@@ -3,19 +3,20 @@
 namespace Softonic\TransactionalEventPublisher\Contracts;
 
 use Illuminate\Database\Eloquent\Model;
+use JsonSerializable;
 
 /**
  * Interface EventMessageContract
  *
  * @package Softonic\TransactionalEventPublisher\Contracts
  */
-interface EventMessageContract extends \JsonSerializable
+interface EventMessageContract extends JsonSerializable
 {
     /**
      * EventMessageContract constructor.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param                                     $eventType
+     * @param Model $model
+     * @param       $eventType
      */
     public function __construct(Model $model, $eventType);
 

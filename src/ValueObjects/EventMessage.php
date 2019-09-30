@@ -21,11 +21,11 @@ class EventMessage implements EventMessageContract
 
     public function __construct(Model $model, $eventType)
     {
-        $this->service = config('transactional-event-publisher.service');
+        $this->service   = config('transactional-event-publisher.service');
         $this->eventType = $eventType;
         $this->modelName = class_basename($model);
         $this->eventName = $this->buildEventName($this->modelName, $eventType);
-        $this->payload = $model->toArray();
+        $this->payload   = $model->toArray();
         $this->createdAt = date('Y-m-d H:i:s');
     }
 
@@ -53,10 +53,10 @@ class EventMessage implements EventMessageContract
     public function toArray()
     {
         return [
-            'service' => $this->service,
+            'service'   => $this->service,
             'eventName' => $this->eventName,
             'createdAt' => $this->createdAt,
-            'payload' => $this->payload,
+            'payload'   => $this->payload,
         ];
     }
 }

@@ -44,7 +44,7 @@ class SendDomainEventsTest extends TestCase
         $dispatcher = Mockery::mock(Dispatcher::class);
         $dispatcher->shouldNotReceive('dispatch');
 
-        $logger = \Mockery::mock(LoggerInterface::class);
+        $logger = Mockery::mock(LoggerInterface::class);
         $logger->shouldNotReceive('alert');
 
         $sendDomainEvents = new SendDomainEvents($message);
@@ -70,7 +70,7 @@ class SendDomainEventsTest extends TestCase
         $dispatcher = Mockery::mock(Dispatcher::class);
         $dispatcher->shouldNotReceive('dispatch');
 
-        $logger = \Mockery::mock(LoggerInterface::class);
+        $logger = Mockery::mock(LoggerInterface::class);
         $logger->shouldReceive('alert')
             ->never();
 
@@ -101,7 +101,7 @@ class SendDomainEventsTest extends TestCase
         $dispatcher->shouldReceive('dispatch')
             ->once();
 
-        $logger = \Mockery::mock(LoggerInterface::class);
+        $logger = Mockery::mock(LoggerInterface::class);
         $logger->shouldReceive('alert')
             ->once()
             ->with($warningMessage);

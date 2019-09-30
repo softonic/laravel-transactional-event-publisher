@@ -4,7 +4,9 @@ namespace Softonic\TransactionalEventPublisher\Observers;
 
 use Illuminate\Database\Connectors\MySqlConnector;
 use Illuminate\Database\Eloquent\Model;
+use Mockery;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
+use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class ModelObserverTest extends TestCase
@@ -13,17 +15,17 @@ class ModelObserverTest extends TestCase
     {
         $eventStoreResult = true;
 
-        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
 
-        $modelMock = \Mockery::mock(Model::class);
+        $modelMock = Mockery::mock(Model::class);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()
@@ -36,24 +38,23 @@ class ModelObserverTest extends TestCase
         $this->assertTrue($modelObserver->created($modelMock));
     }
 
-    /**
-     * @expectedException \Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException
-     */
     public function testWhenANewItemIsCreatedButTheEventStoreFailsWhenStoring()
     {
+        $this->expectException(EventStoreFailedException::class);
+
         $eventStoreResult = false;
 
-        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
 
-        $modelMock = \Mockery::mock(Model::class);
+        $modelMock = Mockery::mock(Model::class);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()
@@ -69,17 +70,17 @@ class ModelObserverTest extends TestCase
     {
         $eventStoreResult = true;
 
-        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
 
-        $modelMock = \Mockery::mock(Model::class);
+        $modelMock = Mockery::mock(Model::class);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()
@@ -92,24 +93,23 @@ class ModelObserverTest extends TestCase
         $this->assertTrue($modelObserver->updated($modelMock));
     }
 
-    /**
-     * @expectedException \Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException
-     */
     public function testWhenAnItemIsUpdatedButTheEventStoreFailsWhenStoring()
     {
+        $this->expectException(EventStoreFailedException::class);
+
         $eventStoreResult = false;
 
-        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
 
-        $modelMock = \Mockery::mock(Model::class);
+        $modelMock = Mockery::mock(Model::class);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()
@@ -125,17 +125,17 @@ class ModelObserverTest extends TestCase
     {
         $eventStoreResult = true;
 
-        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
 
-        $modelMock = \Mockery::mock(Model::class);
+        $modelMock = Mockery::mock(Model::class);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()
@@ -148,24 +148,22 @@ class ModelObserverTest extends TestCase
         $this->assertTrue($modelObserver->deleted($modelMock));
     }
 
-    /**
-     * @expectedException \Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException
-     */
     public function testWhenAnItemIsDeletedButTheEventStoreFailsWhenStoring()
     {
+        $this->expectException(EventStoreFailedException::class);
         $eventStoreResult = false;
 
-        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
 
-        $modelMock = \Mockery::mock(Model::class);
+        $modelMock = Mockery::mock(Model::class);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()
@@ -181,23 +179,23 @@ class ModelObserverTest extends TestCase
     {
         $eventStoreResult = true;
 
-        $mySqlConnectorMock = \Mockery::mock(MySqlConnector::class);
+        $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
 
-        $modelMock = \Mockery::mock(Model::class);
+        $modelMock = Mockery::mock(Model::class);
         $modelMock
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $firstEventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $firstEventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $firstEventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()
             ->andReturn($eventStoreResult);
 
-        $secondEventStoreMiddlewareMock = \Mockery::mock(EventStoreMiddlewareContract::class);
+        $secondEventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $secondEventStoreMiddlewareMock
             ->shouldReceive('store')
             ->once()

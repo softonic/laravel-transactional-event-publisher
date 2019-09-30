@@ -2,6 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher\Observers;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
@@ -34,9 +35,9 @@ class ModelObserver
     /**
      * Handles the model creating event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function creating(Model $model)
     {
@@ -46,7 +47,7 @@ class ModelObserver
     /**
      * Handles the model created event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
      * @return bool
      */
@@ -60,9 +61,9 @@ class ModelObserver
     /**
      * Handles the model updating event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function updating(Model $model)
     {
@@ -72,7 +73,7 @@ class ModelObserver
     /**
      * Handles the model updated event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
      * @return bool
      */
@@ -86,9 +87,9 @@ class ModelObserver
     /**
      * Handles the model deleting event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function deleting(Model $model)
     {
@@ -98,7 +99,7 @@ class ModelObserver
     /**
      * Handles the model deleted event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
      * @return bool
      */

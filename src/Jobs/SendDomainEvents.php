@@ -2,6 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher\Jobs;
 
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -9,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 
@@ -57,7 +59,7 @@ class SendDomainEvents implements ShouldQueue
 
         try {
             $this->sendEvent();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->waitExponentialBackOff();
             $this->retry();
         }
@@ -69,7 +71,7 @@ class SendDomainEvents implements ShouldQueue
             $errorMessage = "The event could't be sent. Retrying message: " . json_encode($this->eventMessage);
             $this->logger->alert($errorMessage);
 
-            throw new \RuntimeException($errorMessage);
+            throw new RuntimeException($errorMessage);
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
+use Exception;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Model\DomainEvent;
@@ -26,7 +27,7 @@ class DatabaseMiddleware implements EventStoreMiddlewareContract
             DomainEvent::create(compact('message'));
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
