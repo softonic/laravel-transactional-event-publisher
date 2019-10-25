@@ -2,6 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher;
 
+use Mockery;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
 
 class TestCase extends TestbenchTestCase
@@ -15,11 +16,11 @@ class TestCase extends TestbenchTestCase
     public function tearDown(): void
     {
         if (class_exists('Mockery')) {
-            if ($container = \Mockery::getContainer()) {
+            if ($container = Mockery::getContainer()) {
                 $this->addToAssertionCount($container->mockery_getExpectationCount());
             }
 
-            \Mockery::close();
+            Mockery::close();
         }
     }
 }

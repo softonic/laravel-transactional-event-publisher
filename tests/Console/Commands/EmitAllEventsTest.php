@@ -5,7 +5,6 @@ namespace Softonic\TransactionalEventPublisher\Tests\Console\Commands;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Softonic\TransactionalEventPublisher\Jobs\SendDomainEvents;
 use Softonic\TransactionalEventPublisher\Model\DomainEvent;
-
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class EmitAllEventsTest extends TestCase

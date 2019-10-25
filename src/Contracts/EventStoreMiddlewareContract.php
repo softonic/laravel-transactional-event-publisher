@@ -12,7 +12,7 @@ interface EventStoreMiddlewareContract
     /**
      * Stores in the message-oriented middleware.
      *
-     * @param \Softonic\TransactionalEventPublisher\Contracts\EventMessageContract $message
+     * @param EventMessageContract $message
      *
      * @return mixed
      */

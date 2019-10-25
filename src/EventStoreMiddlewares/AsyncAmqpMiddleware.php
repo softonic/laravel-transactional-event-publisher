@@ -2,6 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
+use Exception;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
@@ -22,7 +23,7 @@ class AsyncAmqpMiddleware implements EventStoreMiddlewareContract
     /**
      * Stores in the message-oriented middleware.
      *
-     * @param \Softonic\TransactionalEventPublisher\Contracts\EventMessageContract $message
+     * @param EventMessageContract $message
      *
      * @return mixed
      */
@@ -34,7 +35,7 @@ class AsyncAmqpMiddleware implements EventStoreMiddlewareContract
             $this->dispatcher->dispatch($job);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }

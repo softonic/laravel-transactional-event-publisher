@@ -11,14 +11,14 @@
   "require": {
     "php": ">=7.2",
     "bschmitt/laravel-amqp": "^2.0",
-    "laravel/framework": "5.8.*"
+    "laravel/framework": "^5.8 || ^6.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^7.0",
+    "phpunit/phpunit": "^8.0",
     "friendsofphp/php-cs-fixer": "^2.15",
-    "mockery/mockery": "^1",
-    "orchestra/testbench": "^3.8",
-    "orchestra/database": "^3.8",
+    "mockery/mockery": "^1.2",
+    "orchestra/testbench": "^4.0",
+    "orchestra/database": "^4.0",
     "php-mock/php-mock-mockery": "^1.3"
   },
   "autoload": {
@@ -32,7 +32,7 @@
     }
   },
   "scripts": {
-    "test": "phpunit --coverage-text; php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
+    "tests": "phpunit --coverage-text; php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
     "phpunit": "phpunit --coverage-text",
     "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
     "fix-cs": "php-cs-fixer fix -v --diff --allow-risky=yes;"
