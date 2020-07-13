@@ -15,7 +15,8 @@ Main features
 -------------
 
 * Ensure every action has a domain event sent using an atomic transaction between Eloquent model operation, event generation and sent.
-* Events sent to a AMQP system sync or async
+* Events sent to a AMQP system sync or async.
+* Command to send all the events until now.
 
 Installation
 -------------
@@ -103,6 +104,41 @@ Its purpose is store the domain event provided, so you can implement any storage
 ### Custom messages
 
 The `transactional-event.message` class must implements `EventMessageContract` and `transactional-event.middleware` class must implements `EventStoreMiddlewareContract`
+
+### Sending all the events stored in database
+
+Sometimes you will need to send all events stored in the database. To do this, you can use the command `php artisan tinker event-sourcing:emit-all`.
+
+The command allows you to use a specific queue connection to emit all the events and a specific database connection with unbuffered connection.
+These parameters are optional but allows you to send several millions of events in a short time without consume a lot of memory.
+
+The `queueConnection` argument lets you choose a high performance queue driver like redis.
+The `--unbufferedConnection` options allows you to use [unbuffered queries](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html) in MySQL to retrieve a large amount of rows without consuming all the memory.
+
+Unbuffered connection example from `config/database.php`
+```php
+return [
+    'connections' => [
+        'mysql-unbuffered' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'forge'),
+            'username' => env('DB_USERNAME', 'forge'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+            'options'   => [
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => false // This option enabled the unbuffered queries.
+            ],
+        ],
+    ]
+];
+```
 
 Considerations
 ==============
