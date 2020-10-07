@@ -44,10 +44,10 @@ class EmitAllEvents extends Command
         DomainEvent::on($databaseConnection)->cursor()
             ->chunk($batchSize)
             ->each(
-                function ($domainEvents) use ($queueConnection, $bar) {
+                function ($domainEvents) use ($queueConnection, $bar, $batchSize) {
                     SendDomainEvents::dispatch(SendDomainEvents::NO_RETRIES, ...$domainEvents->pluck('message'))
                         ->onConnection($queueConnection);
-                    $bar->advance();
+                    $bar->advance($batchSize);
                 }
             );
 
