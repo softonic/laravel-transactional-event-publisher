@@ -18,31 +18,32 @@ class SendDomainEvents implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * @var EventMessageContract
-     */
-    private $eventMessage;
+    public const NO_RETRIES = 0;
 
     /**
-     * @var int $retry
+     * @var EventMessageContract[]
      */
-    private $retry;
+    private array $eventMessages;
 
-    /**
-     * @var Dispatcher $dispatcher
-     */
-    private $dispatcher;
+    private int $retry;
+
+    private Dispatcher $dispatcher;
+
+    private AmqpMiddleware $amqpMiddleware;
+
+    private LoggerInterface $logger;
+
 
     /**
      * Create a new job instance.
      *
-     * @param EventMessageContract $eventMessage
-     * @param mixed                $retry
+     * @param int                  $retry
+     * @param EventMessageContract $eventMessages
      */
-    public function __construct(EventMessageContract $eventMessage, $retry = 0)
+    public function __construct(int $retry, EventMessageContract ...$eventMessages)
     {
-        $this->eventMessage = $eventMessage;
-        $this->retry        = $retry;
+        $this->eventMessages = $eventMessages;
+        $this->retry         = $retry;
 
         $this->onConnection('database')
             ->onQueue('domainEvents');
@@ -51,7 +52,7 @@ class SendDomainEvents implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(AmqpMiddleware $amqpMiddleware, Dispatcher $dispatcher, LoggerInterface $logger)
+    public function handle(AmqpMiddleware $amqpMiddleware, Dispatcher $dispatcher, LoggerInterface $logger): void
     {
         $this->dispatcher     = $dispatcher;
         $this->amqpMiddleware = $amqpMiddleware;
@@ -67,8 +68,8 @@ class SendDomainEvents implements ShouldQueue
 
     protected function sendEvent(): void
     {
-        if (!$this->amqpMiddleware->store($this->eventMessage)) {
-            $errorMessage = "The event could't be sent. Retrying message: " . json_encode($this->eventMessage);
+        if (!$this->amqpMiddleware->store(...$this->eventMessages)) {
+            $errorMessage = "The event could't be sent. Retrying message: " . json_encode($this->eventMessages);
             $this->logger->alert($errorMessage);
 
             throw new RuntimeException($errorMessage);
@@ -78,14 +79,14 @@ class SendDomainEvents implements ShouldQueue
     protected function waitExponentialBackOff(): void
     {
         $timeToWait = $this->retry < 18
-            ? pow(++$this->retry, 2)
-            : pow($this->retry, 2);
+            ? ++$this->retry ** 2
+            : $this->retry ** 2;
         sleep($timeToWait);
     }
 
     protected function retry(): void
     {
-        $job = (new static($this->eventMessage, $this->retry))
+        $job = (new static($this->retry, ...$this->eventMessages))
             ->onQueue('retryDomainEvent');
 
         $this->dispatcher->dispatch($job);

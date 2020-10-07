@@ -15,7 +15,8 @@ class EmitAllEvents extends Command
      */
     protected $signature = 'event-sourcing:emit-all
         {queueConnection=database : Queue connection to be used to send the messages}
-        {--unbufferedConnection= : Indicate the unbuffered connection (MySQL) for large amount of events}';
+        {--unbufferedConnection= : Indicate the unbuffered connection (MySQL) for large amount of events}
+        {--batchSize=1 : Indicate the amount of events to be sent per publish. Increase for higher throughput}';
 
     /**
      * The console command description.
@@ -33,6 +34,7 @@ class EmitAllEvents extends Command
     {
         $queueConnection    = $this->argument('queueConnection');
         $databaseConnection = $this->option('unbufferedConnection');
+        $batchSize          = $this->option('batchSize');
         $totalEventsToEmit  = DomainEvent::count();
         $bar                = $this->output->createProgressBar($totalEventsToEmit);
 
@@ -40,9 +42,10 @@ class EmitAllEvents extends Command
         $bar->minSecondsBetweenRedraws(1);
 
         DomainEvent::on($databaseConnection)->cursor()
+            ->chunk($batchSize)
             ->each(
-                function ($domainEvent) use ($queueConnection, $bar) {
-                    SendDomainEvents::dispatch($domainEvent->message)
+                function ($domainEvents) use ($queueConnection, $bar) {
+                    SendDomainEvents::dispatch(SendDomainEvents::NO_RETRIES, ...$domainEvents->pluck('message'))
                         ->onConnection($queueConnection);
                     $bar->advance();
                 }

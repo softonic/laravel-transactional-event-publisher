@@ -23,14 +23,14 @@ class AsyncAmqpMiddleware implements EventStoreMiddlewareContract
     /**
      * Stores in the message-oriented middleware.
      *
-     * @param EventMessageContract $message
+     * @param EventMessageContract $messages
      *
      * @return mixed
      */
-    public function store(EventMessageContract $message)
+    public function store(EventMessageContract ...$messages)
     {
         try {
-            $job = new SendDomainEvents($message);
+            $job = new SendDomainEvents(0, $messages);
 
             $this->dispatcher->dispatch($job);
 
