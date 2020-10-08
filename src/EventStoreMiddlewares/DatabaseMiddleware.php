@@ -27,7 +27,7 @@ class DatabaseMiddleware implements EventStoreMiddlewareContract
         try {
             foreach ($messages as $message) {
                 DB::beginTransaction();
-                DomainEvent::create($message);
+                DomainEvent::create(compact('message'));
             }
             DB::commit();
 
