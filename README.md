@@ -140,6 +140,8 @@ return [
 ];
 ```
 
+To reduce the time of the whole process, you can use a `--batchSize` higher than 1 to send the events in batches.
+
 Considerations
 ==============
 
