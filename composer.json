@@ -10,7 +10,7 @@
   },
   "require": {
     "php": ">=7.2",
-    "softonic/laravel-amqp": "2.1.0-alpha2",
+    "softonic/laravel-amqp": "2.1.0",
     "laravel/framework": "^5.8 || ^6.0 || ^7.0"
   },
   "require-dev": {
