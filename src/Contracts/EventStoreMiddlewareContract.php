@@ -12,9 +12,9 @@ interface EventStoreMiddlewareContract
     /**
      * Stores in the message-oriented middleware.
      *
-     * @param EventMessageContract $message
+     * @param EventMessageContract[] $messages
      *
      * @return mixed
      */
-    public function store(EventMessageContract $message);
+    public function store(EventMessageContract ...$messages);
 }

@@ -2,7 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher;
 
-use Bschmitt\Amqp\Amqp;
+use Softonic\Amqp\Amqp;
 use Illuminate\Log\Logger;
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use Softonic\TransactionalEventPublisher\Console\Commands\EmitAllEvents;

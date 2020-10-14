@@ -32,4 +32,17 @@ class EmitAllEventsTest extends TestCase
 
         $this->assertCount(4, $this->dispatchedJobs);
     }
+
+    /**
+     * @test
+     */
+    public function whenRunCommandWithBatchSizeItShouldResendAllTheCurrentDomainEventsInBatch(): void
+    {
+        factory(DomainEvent::class, 4)->create();
+        $this->expectsJobs(SendDomainEvents::class);
+        $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
+        $this->artisan('event-sourcing:emit-all --batchSize=2')->run();
+
+        $this->assertCount(2, $this->dispatchedJobs);
+    }
 }

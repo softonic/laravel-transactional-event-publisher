@@ -25,20 +25,39 @@ class SendDomainEventsTest extends TestCase
         self::$functions = Mockery::mock();
     }
 
-    /**
-     * @test
-     */
-    public function whenMessageIsSendItShouldResumeTheJob()
+    public function messagesToSendProvider(): array
     {
-        $message = Mockery::mock(EventMessageContract::class);
-        $message->shouldReceive('jsonSerialize')
+        $firstMessage = Mockery::mock(EventMessageContract::class);
+        $firstMessage->shouldReceive('jsonSerialize')
+            ->andReturn('message');
+        $secondMessage = Mockery::mock(EventMessageContract::class);
+        $secondMessage->shouldReceive('jsonSerialize')
             ->andReturn('message');
 
+        return [
+            'single message' => [
+                'messages' => [$firstMessage],
+            ],
+            'multiple messages' => [
+                'messages' => [
+                    $firstMessage,
+                    $secondMessage,
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider messagesToSendProvider
+     */
+    public function whenMessageIsSendItShouldResumeTheJob($messages): void
+    {
         $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
 
         $amqpMiddleware->shouldReceive('store')
             ->once()
-            ->with($message)
+            ->with(...$messages)
             ->andReturn(true);
 
         $dispatcher = Mockery::mock(Dispatcher::class);
@@ -47,24 +66,21 @@ class SendDomainEventsTest extends TestCase
         $logger = Mockery::mock(LoggerInterface::class);
         $logger->shouldNotReceive('alert');
 
-        $sendDomainEvents = new SendDomainEvents($message);
+        $sendDomainEvents = new SendDomainEvents(0, ...$messages);
         $sendDomainEvents->handle($amqpMiddleware, $dispatcher, $logger);
     }
 
     /**
      * @test
+     * @dataProvider messagesToSendProvider
      */
-    public function whenMessageIsSendWithExponentialRetryItShouldResumeTheJobWaitingASpecificTime()
+    public function whenMessageIsSendWithExponentialRetryItShouldResumeTheJobWaitingASpecificTime($messages)
     {
-        $message = Mockery::mock(EventMessageContract::class);
-        $message->shouldReceive('jsonSerialize')
-            ->andReturn('message');
-
         $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
 
         $amqpMiddleware->shouldReceive('store')
             ->once()
-            ->with($message)
+            ->with(...$messages)
             ->andReturn(true);
 
         $dispatcher = Mockery::mock(Dispatcher::class);
@@ -76,25 +92,22 @@ class SendDomainEventsTest extends TestCase
 
         self::$functions->shouldNotReceive('sleep');
 
-        $sendDomainEvents = new SendDomainEvents($message);
+        $sendDomainEvents = new SendDomainEvents(0, ...$messages);
         $sendDomainEvents->handle($amqpMiddleware, $dispatcher, $logger);
     }
 
     /**
      * @test
+     * @dataProvider messagesToSendProvider
      */
-    public function whenMessageCannotBeSendItShouldTryAgainLater()
+    public function whenMessageCannotBeSendItShouldTryAgainLater($messages)
     {
-        $message = Mockery::mock(EventMessageContract::class);
-        $message->shouldReceive('jsonSerialize')
-            ->andReturn('message');
-
         $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
-        $warningMessage = "The event could't be sent. Retrying message: " . json_encode($message);
+        $warningMessage = "The event could't be sent. Retrying message: " . json_encode($messages);
 
         $amqpMiddleware->shouldReceive('store')
             ->once()
-            ->with($message)
+            ->with(...$messages)
             ->andReturn(false);
 
         $dispatcher = Mockery::mock(Dispatcher::class);
@@ -106,7 +119,7 @@ class SendDomainEventsTest extends TestCase
             ->once()
             ->with($warningMessage);
 
-        $sendDomainEvents = new SendDomainEvents($message, 2);
+        $sendDomainEvents = new SendDomainEvents(2, ...$messages);
 
         self::$functions->shouldReceive('sleep')->with(9)->once();
 
