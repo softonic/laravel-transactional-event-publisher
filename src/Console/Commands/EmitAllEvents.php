@@ -40,6 +40,7 @@ class EmitAllEvents extends Command
 
         $bar->start();
         $bar->minSecondsBetweenRedraws(1);
+        $bar->setFormat('%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%');
 
         DomainEvent::on($databaseConnection)->cursor()
             ->chunk($batchSize)
