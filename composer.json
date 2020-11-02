@@ -9,16 +9,16 @@
     "issues": "https://github.com/softonic/laravel-transactional-event-publisher/issues"
   },
   "require": {
-    "php": ">=7.2",
+    "php": ">=7.3",
     "softonic/laravel-amqp": "2.1.0",
-    "laravel/framework": "^5.8 || ^6.0 || ^7.0"
+    "laravel/framework": "^7.0 || ^8.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^8.0",
+    "phpunit/phpunit": "^9.0",
     "friendsofphp/php-cs-fixer": "^2.15",
     "mockery/mockery": "^1.2",
-    "orchestra/testbench": "^4.0",
-    "orchestra/database": "^4.0",
+    "orchestra/testbench": "^6.0",
+    "orchestra/database": "^5.0",
     "php-mock/php-mock-mockery": "^1.3"
   },
   "autoload": {
