@@ -35,7 +35,7 @@ class EmitAllEvents extends Command
         $queueConnection    = $this->argument('queueConnection');
         $databaseConnection = $this->option('unbufferedConnection');
         $batchSize          = $this->option('batchSize');
-        $totalEventsToEmit  = DomainEvent::count();
+        $totalEventsToEmit  = DomainEvent::max('id');
         $bar                = $this->output->createProgressBar($totalEventsToEmit);
 
         $bar->start();
