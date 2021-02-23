@@ -17,6 +17,7 @@ class EmitAllEventsTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
     }
 
@@ -30,7 +31,7 @@ class EmitAllEventsTest extends TestCase
         $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
         $this->artisan('event-sourcing:emit-all')->run();
 
-        $this->assertCount(4, $this->dispatchedJobs);
+        self::assertCount(4, $this->dispatchedJobs);
     }
 
     /**
@@ -43,6 +44,6 @@ class EmitAllEventsTest extends TestCase
         $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
         $this->artisan('event-sourcing:emit-all --batchSize=2')->run();
 
-        $this->assertCount(2, $this->dispatchedJobs);
+        self::assertCount(2, $this->dispatchedJobs);
     }
 }

@@ -2,10 +2,10 @@
 
 namespace Softonic\TransactionalEventPublisher\Tests\EventStoreMiddlewares;
 
-use Softonic\Amqp\Amqp;
 use Mockery;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
+use Softonic\Amqp\Amqp;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
@@ -106,7 +106,7 @@ class AmqpMiddlewareTest extends TestCase
 
         return [
             $this->getOneMessage(),
-            $message
+            $message,
         ];
     }
 
@@ -136,10 +136,10 @@ class AmqpMiddlewareTest extends TestCase
 
     public function testWhenStoringMultipleMessagesShouldReturnTrue()
     {
-        $messages     = $this->getTwoMessages();
-        $properties  = ['AMQP properties'];
-        $logger      = Mockery::mock(LoggerInterface::class);
-        $firstAmqpMessage = new AMQPMessage();
+        $messages          = $this->getTwoMessages();
+        $properties        = ['AMQP properties'];
+        $logger            = Mockery::mock(LoggerInterface::class);
+        $firstAmqpMessage  = new AMQPMessage();
         $secondAmqpMessage = new AMQPMessage();
 
         $amqpMock = Mockery::mock(Amqp::class);
@@ -199,12 +199,12 @@ class AmqpMiddlewareTest extends TestCase
 
     public function testConfigurableRoutingKeyForMultipleMessages()
     {
-        $messages            = $this->getTwoMessages();
-        $properties         = [
+        $messages          = $this->getTwoMessages();
+        $properties        = [
             'routing_key_fields' => ['site', 'service', 'eventType', 'modelName'],
         ];
-        $logger             = Mockery::mock(LoggerInterface::class);
-        $firstAmqpMessage = new AMQPMessage();
+        $logger            = Mockery::mock(LoggerInterface::class);
+        $firstAmqpMessage  = new AMQPMessage();
         $secondAmqpMessage = new AMQPMessage();
 
         $amqpMock = Mockery::mock(Amqp::class);

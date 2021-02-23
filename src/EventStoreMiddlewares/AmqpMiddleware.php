@@ -2,9 +2,9 @@
 
 namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
-use Softonic\Amqp\Amqp;
 use Exception;
 use Psr\Log\LoggerInterface;
+use Softonic\Amqp\Amqp;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;

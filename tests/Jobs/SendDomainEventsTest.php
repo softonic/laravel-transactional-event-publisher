@@ -28,22 +28,24 @@ class SendDomainEventsTest extends TestCase
     public function messagesToSendProvider(): array
     {
         $firstMessage = Mockery::mock(EventMessageContract::class);
+        $firstMessage->shouldReceive('generateCreatedAt');
         $firstMessage->shouldReceive('jsonSerialize')
             ->andReturn('message');
         $secondMessage = Mockery::mock(EventMessageContract::class);
+        $secondMessage->shouldReceive('generateCreatedAt');
         $secondMessage->shouldReceive('jsonSerialize')
             ->andReturn('message');
 
         return [
-            'single message' => [
+            'single message'    => [
                 'messages' => [$firstMessage],
             ],
             'multiple messages' => [
                 'messages' => [
                     $firstMessage,
                     $secondMessage,
-                ]
-            ]
+                ],
+            ],
         ];
     }
 
@@ -51,7 +53,7 @@ class SendDomainEventsTest extends TestCase
      * @test
      * @dataProvider messagesToSendProvider
      */
-    public function whenMessageIsSendItShouldResumeTheJob($messages): void
+    public function whenMessageIsSendItShouldResumeTheJob(array $messages): void
     {
         $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
 
@@ -74,7 +76,7 @@ class SendDomainEventsTest extends TestCase
      * @test
      * @dataProvider messagesToSendProvider
      */
-    public function whenMessageIsSendWithExponentialRetryItShouldResumeTheJobWaitingASpecificTime($messages)
+    public function whenMessageIsSendWithExponentialRetryItShouldResumeTheJobWaitingASpecificTime(array $messages)
     {
         $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
 
@@ -100,7 +102,7 @@ class SendDomainEventsTest extends TestCase
      * @test
      * @dataProvider messagesToSendProvider
      */
-    public function whenMessageCannotBeSendItShouldTryAgainLater($messages)
+    public function whenMessageCannotBeSendItShouldTryAgainLater(array $messages)
     {
         $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
         $warningMessage = "The event couldn't be sent. Retrying message: " . json_encode($messages);

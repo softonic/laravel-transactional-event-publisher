@@ -24,7 +24,7 @@ class AsyncAmqpMiddlewareTest extends TestCase
             ->once()
             ->andThrow(Exception::class);
 
-        $this->assertFalse($asyncAmqpMiddleware->store($eventMessage));
+        self::assertFalse($asyncAmqpMiddleware->store($eventMessage));
     }
 
     /**
@@ -42,6 +42,6 @@ class AsyncAmqpMiddlewareTest extends TestCase
                 return $job instanceof SendDomainEvents;
             });
 
-        $this->assertTrue($asyncAmqpMiddleware->store($eventMessage));
+        self::assertTrue($asyncAmqpMiddleware->store($eventMessage));
     }
 }
