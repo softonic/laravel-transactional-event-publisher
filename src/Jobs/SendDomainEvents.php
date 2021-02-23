@@ -68,8 +68,12 @@ class SendDomainEvents implements ShouldQueue
 
     protected function sendEvent(): void
     {
+        foreach ($this->eventMessages as $eventMessage) {
+            $eventMessage->createdAt = $eventMessage->generateCreatedAt();
+        }
+
         if (!$this->amqpMiddleware->store(...$this->eventMessages)) {
-            $errorMessage = "The event could't be sent. Retrying message: " . json_encode($this->eventMessages);
+            $errorMessage = "The event couldn't be sent. Retrying message: " . json_encode($this->eventMessages);
             $this->logger->alert($errorMessage);
 
             throw new RuntimeException($errorMessage);

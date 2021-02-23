@@ -11,6 +11,11 @@ class EventMessageStub implements EventMessageContract
     {
     }
 
+    public function generateCreatedAt(): string
+    {
+        return '2018-02-01 21:00:05';
+    }
+
     public function toArray()
     {
         return [

@@ -17,6 +17,11 @@ class CustomEventMessage implements EventMessageContract
     {
     }
 
+    public function generateCreatedAt(): string
+    {
+        return '2018-02-01 21:00:05';
+    }
+
     /**
      * Returns the message in an array format.
      *

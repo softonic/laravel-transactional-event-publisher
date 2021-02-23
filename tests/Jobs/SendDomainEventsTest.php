@@ -103,7 +103,7 @@ class SendDomainEventsTest extends TestCase
     public function whenMessageCannotBeSendItShouldTryAgainLater($messages)
     {
         $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
-        $warningMessage = "The event could't be sent. Retrying message: " . json_encode($messages);
+        $warningMessage = "The event couldn't be sent. Retrying message: " . json_encode($messages);
 
         $amqpMiddleware->shouldReceive('store')
             ->once()
