@@ -35,7 +35,7 @@ class ModelObserverTest extends TestCase
 
         $modelObserver->creating($modelMock);
 
-        $this->assertTrue($modelObserver->created($modelMock));
+        self::assertTrue($modelObserver->created($modelMock));
     }
 
     public function testWhenANewItemIsCreatedButTheEventStoreFailsWhenStoring()
@@ -90,7 +90,7 @@ class ModelObserverTest extends TestCase
 
         $modelObserver->updating($modelMock);
 
-        $this->assertTrue($modelObserver->updated($modelMock));
+        self::assertTrue($modelObserver->updated($modelMock));
     }
 
     public function testWhenAnItemIsUpdatedButTheEventStoreFailsWhenStoring()
@@ -145,7 +145,7 @@ class ModelObserverTest extends TestCase
 
         $modelObserver->deleting($modelMock);
 
-        $this->assertTrue($modelObserver->deleted($modelMock));
+        self::assertTrue($modelObserver->deleted($modelMock));
     }
 
     public function testWhenAnItemIsDeletedButTheEventStoreFailsWhenStoring()
@@ -211,6 +211,6 @@ class ModelObserverTest extends TestCase
 
         $modelObserver->creating($modelMock);
 
-        $this->assertTrue($modelObserver->created($modelMock));
+        self::assertTrue($modelObserver->created($modelMock));
     }
 }

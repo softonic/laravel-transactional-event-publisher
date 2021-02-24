@@ -42,6 +42,6 @@ class AmqpMessageFactoryTest extends TestCase
 
         $amqpMessage = $factory->make($eventMessage);
 
-        $this->assertInstanceOf(AMQPMessage::class, $amqpMessage);
+        self::assertInstanceOf(AMQPMessage::class, $amqpMessage);
     }
 }
