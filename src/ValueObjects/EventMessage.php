@@ -26,17 +26,12 @@ class EventMessage implements EventMessageContract
         $this->modelName = class_basename($model);
         $this->eventName = $this->buildEventName($this->modelName, $eventType);
         $this->payload   = $model->toArray();
-        $this->createdAt = $this->generateCreatedAt();
+        $this->createdAt = date('Y-m-d H:i:s');
     }
 
     private function buildEventName($modelName, $event)
     {
         return $modelName . ucfirst($event);
-    }
-
-    public function generateCreatedAt(): string
-    {
-        return date('Y-m-d H:i:s');
     }
 
     /**

@@ -6,7 +6,7 @@ use Illuminate\Contracts\Bus\Dispatcher;
 use Mockery;
 use Psr\Log\LoggerInterface;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
-use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
+use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 function sleep($time)
@@ -16,11 +16,23 @@ function sleep($time)
 
 class SendDomainEventsTest extends TestCase
 {
+    private EventStoreMiddlewareContract $eventPublisherMiddleware;
+
+    private Dispatcher $dispatcher;
+
+    private LoggerInterface $logger;
+
     public static $functions;
 
     public function setUp(): void
     {
         parent::setUp();
+
+        $this->eventMessage = Mockery::mock(EventMessageContract::class);
+
+        $this->eventPublisherMiddleware = Mockery::mock(EventStoreMiddlewareContract::class);
+        $this->dispatcher               = Mockery::mock(Dispatcher::class);
+        $this->logger                   = Mockery::mock(LoggerInterface::class);
 
         self::$functions = Mockery::mock();
     }
@@ -28,11 +40,9 @@ class SendDomainEventsTest extends TestCase
     public function messagesToSendProvider(): array
     {
         $firstMessage = Mockery::mock(EventMessageContract::class);
-        $firstMessage->shouldReceive('generateCreatedAt');
         $firstMessage->shouldReceive('jsonSerialize')
             ->andReturn('message');
         $secondMessage = Mockery::mock(EventMessageContract::class);
-        $secondMessage->shouldReceive('generateCreatedAt');
         $secondMessage->shouldReceive('jsonSerialize')
             ->andReturn('message');
 
@@ -55,21 +65,17 @@ class SendDomainEventsTest extends TestCase
      */
     public function whenMessageIsSendItShouldResumeTheJob(array $messages): void
     {
-        $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
-
-        $amqpMiddleware->shouldReceive('store')
+        $this->eventPublisherMiddleware->shouldReceive('store')
             ->once()
             ->with(...$messages)
             ->andReturn(true);
 
-        $dispatcher = Mockery::mock(Dispatcher::class);
-        $dispatcher->shouldNotReceive('dispatch');
+        $this->dispatcher->shouldNotReceive('dispatch');
 
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldNotReceive('alert');
+        $this->logger->shouldNotReceive('alert');
 
-        $sendDomainEvents = new SendDomainEvents(0, ...$messages);
-        $sendDomainEvents->handle($amqpMiddleware, $dispatcher, $logger);
+        $sendDomainEvents = new SendDomainEvents($this->eventPublisherMiddleware, 0, ...$messages);
+        $sendDomainEvents->handle($this->dispatcher, $this->logger);
     }
 
     /**
@@ -78,24 +84,20 @@ class SendDomainEventsTest extends TestCase
      */
     public function whenMessageIsSendWithExponentialRetryItShouldResumeTheJobWaitingASpecificTime(array $messages)
     {
-        $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
-
-        $amqpMiddleware->shouldReceive('store')
+        $this->eventPublisherMiddleware->shouldReceive('store')
             ->once()
             ->with(...$messages)
             ->andReturn(true);
 
-        $dispatcher = Mockery::mock(Dispatcher::class);
-        $dispatcher->shouldNotReceive('dispatch');
+        $this->dispatcher->shouldNotReceive('dispatch');
 
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('alert')
+        $this->logger->shouldReceive('alert')
             ->never();
 
         self::$functions->shouldNotReceive('sleep');
 
-        $sendDomainEvents = new SendDomainEvents(0, ...$messages);
-        $sendDomainEvents->handle($amqpMiddleware, $dispatcher, $logger);
+        $sendDomainEvents = new SendDomainEvents($this->eventPublisherMiddleware, 0, ...$messages);
+        $sendDomainEvents->handle($this->dispatcher, $this->logger);
     }
 
     /**
@@ -104,27 +106,23 @@ class SendDomainEventsTest extends TestCase
      */
     public function whenMessageCannotBeSendItShouldTryAgainLater(array $messages)
     {
-        $amqpMiddleware = Mockery::mock(AmqpMiddleware::class);
         $warningMessage = "The event couldn't be sent. Retrying message: " . json_encode($messages);
 
-        $amqpMiddleware->shouldReceive('store')
+        $this->eventPublisherMiddleware->shouldReceive('store')
             ->once()
             ->with(...$messages)
             ->andReturn(false);
 
-        $dispatcher = Mockery::mock(Dispatcher::class);
-        $dispatcher->shouldReceive('dispatch')
+        $this->dispatcher->shouldReceive('dispatch')
             ->once();
 
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('alert')
+        $this->logger->shouldReceive('alert')
             ->once()
             ->with($warningMessage);
 
-        $sendDomainEvents = new SendDomainEvents(2, ...$messages);
-
         self::$functions->shouldReceive('sleep')->with(9)->once();
 
-        $sendDomainEvents->handle($amqpMiddleware, $dispatcher, $logger);
+        $sendDomainEvents = new SendDomainEvents($this->eventPublisherMiddleware, 2, ...$messages);
+        $sendDomainEvents->handle($this->dispatcher, $this->logger);
     }
 }

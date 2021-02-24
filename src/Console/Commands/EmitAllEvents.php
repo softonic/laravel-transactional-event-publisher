@@ -3,6 +3,7 @@
 namespace Softonic\TransactionalEventPublisher\Console\Commands;
 
 use Illuminate\Console\Command;
+use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Jobs\SendDomainEvents;
 use Softonic\TransactionalEventPublisher\Model\DomainEvent;
 
@@ -30,7 +31,7 @@ class EmitAllEvents extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(EventStoreMiddlewareContract $eventPublisherMiddleware)
     {
         $queueConnection    = $this->argument('queueConnection');
         $databaseConnection = $this->option('unbufferedConnection');
@@ -45,9 +46,12 @@ class EmitAllEvents extends Command
         DomainEvent::on($databaseConnection)->cursor()
             ->chunk($batchSize)
             ->each(
-                function ($domainEvents) use ($queueConnection, $bar, $batchSize) {
-                    SendDomainEvents::dispatch(SendDomainEvents::NO_RETRIES, ...$domainEvents->pluck('message'))
-                        ->onConnection($queueConnection);
+                function ($domainEvents) use ($eventPublisherMiddleware, $queueConnection, $bar, $batchSize) {
+                    SendDomainEvents::dispatch(
+                        $eventPublisherMiddleware,
+                        SendDomainEvents::NO_RETRIES,
+                        ...$domainEvents->pluck('message')
+                    )->onConnection($queueConnection);
                     $bar->advance($batchSize);
                 }
             );

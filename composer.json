@@ -9,7 +9,7 @@
     "issues": "https://github.com/softonic/laravel-transactional-event-publisher/issues"
   },
   "require": {
-    "php": ">=7.3",
+    "php": ">=7.4",
     "softonic/laravel-amqp": "2.1.0",
     "laravel/framework": "^7.0 || ^8.0"
   },

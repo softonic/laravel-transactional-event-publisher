@@ -21,11 +21,6 @@ interface EventMessageContract extends JsonSerializable
     public function __construct(Model $model, $eventType);
 
     /**
-     * Generates the createdAt value.
-     */
-    public function generateCreatedAt(): string;
-
-    /**
      * Returns the message in an array format.
      *
      * @return array

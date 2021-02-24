@@ -2,11 +2,13 @@
 
 namespace Softonic\TransactionalEventPublisher;
 
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Log\Logger;
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use Softonic\Amqp\Amqp;
 use Softonic\TransactionalEventPublisher\Console\Commands\EmitAllEvents;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
+use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
 
@@ -51,6 +53,13 @@ class ServiceProvider extends LaravelServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/' . $this->packageName . '.php', $this->packageName);
 
+        $this->app->bind(AsyncMiddleware::class, function () {
+            return new AsyncMiddleware(
+                resolve(config('transactional-event-publisher.event_publisher_middleware')),
+                resolve(Dispatcher::class)
+            );
+        });
+
         $this->app->bind(AmqpMiddleware::class, function () {
             return new AmqpMiddleware(
                 new AmqpMessageFactory(),
@@ -76,6 +85,15 @@ class ServiceProvider extends LaravelServiceProvider
                 config('transactional-event-publisher.message')
             );
         });
+
+        $this->app->bindMethod(
+            'Softonic\TransactionalEventPublisher\Console\Commands\EmitAllEvents@handle',
+            function ($job) {
+                return $job->handle(
+                    resolve(config('transactional-event-publisher.event_publisher_middleware'))
+                );
+            }
+        );
 
         $this->commands([EmitAllEvents::class]);
     }

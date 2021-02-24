@@ -37,15 +37,24 @@ php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\Serv
 
 We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware`, 
  `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware` 
- and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncAmqpMiddleware` middlewares to send events.
+ and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncMiddleware` middlewares to send events.
 
 #### Sync AMQP middleware 
 
 To use the sync AMQP you just need to configure the AMQP connection using the configuration file or environmental variables. 
 As you could see, in the configuration you won't be able to define a queue. This is because the library just publishes the message to an exchange and is the events collector responsability to declare the needed queues with the needed bindings.
  
-#### Async AMQP middleware
+#### Async middleware
 
+You need to configure the middleware you want to publish the events. For example:
+```php
+    /*
+     |--------------------------------------------------------------------------
+     | Middleware that publishes the events when using AsyncMiddleware.
+     |--------------------------------------------------------------------------
+     */
+    'event_publisher_middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
+```
 You need to do the Sync AMQP middleware steps and continue with these:
 
 * Create the job table if you don't have it in the project

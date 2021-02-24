@@ -8,16 +8,16 @@ use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Jobs\SendDomainEvents;
 
-class AsyncAmqpMiddleware implements EventStoreMiddlewareContract
+class AsyncMiddleware implements EventStoreMiddlewareContract
 {
-    /**
-     * @var Dispatcher
-     */
-    private $dispatcher;
+    private EventStoreMiddlewareContract $eventPublisherMiddleware;
 
-    public function __construct(Dispatcher $dispatcher)
+    private Dispatcher $dispatcher;
+
+    public function __construct(EventStoreMiddlewareContract $eventPublisherMiddleware, Dispatcher $dispatcher)
     {
-        $this->dispatcher = $dispatcher;
+        $this->eventPublisherMiddleware = $eventPublisherMiddleware;
+        $this->dispatcher               = $dispatcher;
     }
 
     /**
@@ -30,7 +30,7 @@ class AsyncAmqpMiddleware implements EventStoreMiddlewareContract
     public function store(EventMessageContract ...$messages)
     {
         try {
-            $job = new SendDomainEvents(0, ...$messages);
+            $job = new SendDomainEvents($this->eventPublisherMiddleware, 0, ...$messages);
 
             $this->dispatcher->dispatch($job);
 
