@@ -22,6 +22,8 @@ return [
     */
     'event_publisher_middleware' => null,
 
+    //'event_publisher_middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
+
     /*
     |--------------------------------------------------------------------------
     | Event Message class.
