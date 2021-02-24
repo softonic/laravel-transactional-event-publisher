@@ -46,7 +46,7 @@ As you could see, in the configuration you won't be able to define a queue. This
  
 #### Async middleware
 
-You need to configure the middleware you want to publish the events. For example:
+The async middleware is just responsible to delay the action, so you need to configure the real middleware that is who will publish the messages. For example:
 ```php
     /*
      |--------------------------------------------------------------------------
@@ -55,7 +55,7 @@ You need to configure the middleware you want to publish the events. For example
      */
     'event_publisher_middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
 ```
-You need to do the Sync AMQP middleware steps and continue with these:
+If you want to use the AMQP middleware in async, remember to do the Sync AMQP middleware steps and continue with these:
 
 * Create the job table if you don't have it in the project
 ```bash

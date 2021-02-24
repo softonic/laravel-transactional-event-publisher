@@ -3,6 +3,7 @@
 namespace Softonic\TransactionalEventPublisher\Tests\Console\Commands;
 
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Jobs\SendDomainEvents;
 use Softonic\TransactionalEventPublisher\Model\DomainEvent;
 use Softonic\TransactionalEventPublisher\TestCase;
@@ -19,6 +20,8 @@ class EmitAllEventsTest extends TestCase
         parent::setUp();
 
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
+
+        config()->set('transactional-event-publisher.event_publisher_middleware', AmqpMiddleware::class);
     }
 
     /**

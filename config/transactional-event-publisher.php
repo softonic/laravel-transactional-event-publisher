@@ -13,14 +13,14 @@ return [
     | Middleware class where the event messages will be stored.
     |--------------------------------------------------------------------------
     */
-    'middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncMiddleware::class,
+    'middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
 
     /*
     |--------------------------------------------------------------------------
     | Middleware that publishes the events when using AsyncMiddleware.
     |--------------------------------------------------------------------------
     */
-    'event_publisher_middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
+    'event_publisher_middleware' => null,
 
     /*
     |--------------------------------------------------------------------------
