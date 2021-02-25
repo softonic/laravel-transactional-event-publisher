@@ -2,9 +2,9 @@
 
 namespace Softonic\TransactionalEventPublisher\Tests\EventStoreMiddlewares;
 
+use Illuminate\Support\Facades\Log;
 use Mockery;
 use PhpAmqpLib\Message\AMQPMessage;
-use Psr\Log\LoggerInterface;
 use Softonic\Amqp\Amqp;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
@@ -19,8 +19,7 @@ class AmqpMiddlewareTest extends TestCase
         $amqpMessage = new AMQPMessage();
         $properties  = ['AMQP properties'];
 
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('error')
+        Log::shouldReceive('error')
             ->once();
 
         $amqpMessageFactory = Mockery::mock(AmqpMessageFactory::class);
@@ -35,12 +34,7 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andThrow('\Exception');
 
-        $amqpMiddleware = new AmqpMiddleware(
-            $amqpMessageFactory,
-            $amqpMock,
-            $properties,
-            $logger
-        );
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
 
         self::assertFalse($amqpMiddleware->store($message));
     }
@@ -65,8 +59,7 @@ class AmqpMiddlewareTest extends TestCase
         $amqpMessage = new AMQPMessage();
         $properties  = ['AMQP properties'];
 
-        $logger = Mockery::mock(LoggerInterface::class);
-        $logger->shouldReceive('error')
+        Log::shouldReceive('error')
             ->once();
 
         $amqpMessageFactory = Mockery::mock(AmqpMessageFactory::class);
@@ -84,12 +77,7 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andThrow('\Exception');
 
-        $amqpMiddleware = new AmqpMiddleware(
-            $amqpMessageFactory,
-            $amqpMock,
-            $properties,
-            $logger
-        );
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
 
         self::assertFalse($amqpMiddleware->store(...$messages));
     }
@@ -114,7 +102,6 @@ class AmqpMiddlewareTest extends TestCase
     {
         $message     = $this->getOneMessage();
         $properties  = ['AMQP properties'];
-        $logger      = Mockery::mock(LoggerInterface::class);
         $amqpMessage = new AMQPMessage();
 
         $amqpMock = Mockery::mock(Amqp::class);
@@ -129,7 +116,7 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties, $logger);
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
 
         self::assertTrue($amqpMiddleware->store($message));
     }
@@ -138,7 +125,6 @@ class AmqpMiddlewareTest extends TestCase
     {
         $messages          = $this->getTwoMessages();
         $properties        = ['AMQP properties'];
-        $logger            = Mockery::mock(LoggerInterface::class);
         $firstAmqpMessage  = new AMQPMessage();
         $secondAmqpMessage = new AMQPMessage();
 
@@ -162,7 +148,7 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties, $logger);
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
 
         self::assertTrue($amqpMiddleware->store(...$messages));
     }
@@ -173,7 +159,6 @@ class AmqpMiddlewareTest extends TestCase
         $properties         = [
             'routing_key_fields' => ['site', 'service', 'eventType', 'modelName'],
         ];
-        $logger             = Mockery::mock(LoggerInterface::class);
         $message->site      = 'softonic';
         $message->service   = 'service';
         $message->eventType = 'created';
@@ -192,7 +177,7 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties, $logger);
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
 
         self::assertTrue($amqpMiddleware->store($message));
     }
@@ -203,7 +188,6 @@ class AmqpMiddlewareTest extends TestCase
         $properties        = [
             'routing_key_fields' => ['site', 'service', 'eventType', 'modelName'],
         ];
-        $logger            = Mockery::mock(LoggerInterface::class);
         $firstAmqpMessage  = new AMQPMessage();
         $secondAmqpMessage = new AMQPMessage();
 
@@ -227,7 +211,7 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties, $logger);
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
 
         self::assertTrue($amqpMiddleware->store(...$messages));
     }

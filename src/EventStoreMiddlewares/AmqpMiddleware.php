@@ -3,7 +3,7 @@
 namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
 use Exception;
-use Psr\Log\LoggerInterface;
+use Illuminate\Support\Facades\Log;
 use Softonic\Amqp\Amqp;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
@@ -23,28 +23,20 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
     private $properties;
 
     /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * AmqpMiddleware constructor.
      *
      * @param AmqpMessageFactory $messageFactory
      * @param Amqp               $amqp
      * @param array              $properties
-     * @param LoggerInterface    $logger
      */
     public function __construct(
         AmqpMessageFactory $messageFactory,
         Amqp $amqp,
-        array $properties,
-        LoggerInterface $logger
+        array $properties
     ) {
         $this->messageFactory = $messageFactory;
         $this->amqp           = $amqp;
         $this->properties     = $properties;
-        $this->logger         = $logger;
     }
 
     /**
@@ -78,7 +70,7 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
 
             return true;
         } catch (Exception $e) {
-            $this->logger->error($e->getMessage());
+            Log::error($e->getMessage());
 
             return false;
         }
