@@ -3,7 +3,6 @@
 namespace Softonic\TransactionalEventPublisher;
 
 use Illuminate\Contracts\Bus\Dispatcher;
-use Illuminate\Log\Logger;
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use Softonic\Amqp\Amqp;
 use Softonic\TransactionalEventPublisher\Console\Commands\EmitAllEvents;
@@ -64,8 +63,7 @@ class ServiceProvider extends LaravelServiceProvider
             return new AmqpMiddleware(
                 new AmqpMessageFactory(),
                 new Amqp(),
-                config('transactional-event-publisher.properties.amqp'),
-                resolve(Logger::class)
+                config('transactional-event-publisher.properties.amqp')
             );
         });
 
