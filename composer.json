@@ -18,7 +18,7 @@
     "laravel/legacy-factories": "^1.0.4",
     "mockery/mockery": "^1.2",
     "orchestra/testbench": "^6.0",
-    "orchestra/database": "6.x-dev",
+    "orchestra/database": "^6.0",
     "phpunit/phpunit": "^9.0",
     "php-mock/php-mock-mockery": "^1.3"
   },
