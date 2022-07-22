@@ -21,11 +21,14 @@ class AmqpMessageFactory
      *
      * @return AMQPMessage
      */
-    public function make(EventMessageContract $eventMessage, array $properties = null)
+    public function make(EventMessageContract $eventMessage, array $properties = [])
     {
         $this->checkMessage($eventMessage->toArray());
 
-        return new AMQPMessage(json_encode($eventMessage), $properties);
+        return new AMQPMessage(
+            json_encode($eventMessage),
+            array_merge(['content_type' => 'application/json'], $properties)
+        );
     }
 
     private function checkMessage(array $message)
