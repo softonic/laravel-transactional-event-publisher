@@ -2,11 +2,13 @@
 
 namespace Softonic\TransactionalEventPublisher\Tests\Console\Commands;
 
+use Illuminate\Contracts\Bus\Dispatcher as BusDispatcherContract;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Jobs\SendDomainEvents;
 use Softonic\TransactionalEventPublisher\Model\DomainEvent;
 use Softonic\TransactionalEventPublisher\TestCase;
+use Mockery;
 
 class EmitAllEventsTest extends TestCase
 {
@@ -17,9 +19,6 @@ class EmitAllEventsTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->markTestSkipped('
-            MocksApplicationServices trait is deprecated in laravel 9. Functions like "expectsJobs" is no longer working
-            ');
         parent::setUp();
 
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
@@ -33,7 +32,13 @@ class EmitAllEventsTest extends TestCase
     public function whenRunCommandItShouldResendAllTheCurrentDomainEvents(): void
     {
         factory(DomainEvent::class, 4)->create();
-        $this->expectsJobs(SendDomainEvents::class);
+
+        $mock = Mockery::mock(BusDispatcherContract::class);
+        $mock->shouldReceive('dispatch')->andReturnUsing(function ($dispatched) {
+            $this->dispatchedJobs[] = $dispatched;
+        });
+        $this->app->instance(BusDispatcherContract::class, $mock);
+        //$this->expectsJobs(SendDomainEvents::class);
         $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
         $this->artisan('event-sourcing:emit-all')->run();
 
@@ -46,7 +51,12 @@ class EmitAllEventsTest extends TestCase
     public function whenRunCommandWithBatchSizeItShouldResendAllTheCurrentDomainEventsInBatch(): void
     {
         factory(DomainEvent::class, 4)->create();
-        $this->expectsJobs(SendDomainEvents::class);
+        $mock = Mockery::mock(BusDispatcherContract::class);
+        $mock->shouldReceive('dispatch')->andReturnUsing(function ($dispatched) {
+            $this->dispatchedJobs[] = $dispatched;
+        });
+        $this->app->instance(BusDispatcherContract::class, $mock);
+        //$this->expectsJobs(SendDomainEvents::class);
         $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
         $this->artisan('event-sourcing:emit-all --batchSize=2')->run();
 
