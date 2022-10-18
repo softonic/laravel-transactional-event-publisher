@@ -38,7 +38,6 @@ class EmitAllEventsTest extends TestCase
             $this->dispatchedJobs[] = $dispatched;
         });
         $this->app->instance(BusDispatcherContract::class, $mock);
-        //$this->expectsJobs(SendDomainEvents::class);
         $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
         $this->artisan('event-sourcing:emit-all')->run();
 
@@ -56,7 +55,6 @@ class EmitAllEventsTest extends TestCase
             $this->dispatchedJobs[] = $dispatched;
         });
         $this->app->instance(BusDispatcherContract::class, $mock);
-        //$this->expectsJobs(SendDomainEvents::class);
         $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
         $this->artisan('event-sourcing:emit-all --batchSize=2')->run();
 
