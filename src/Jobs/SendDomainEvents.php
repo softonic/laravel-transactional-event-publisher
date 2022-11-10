@@ -16,7 +16,10 @@ use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 
 class SendDomainEvents implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     public const NO_RETRIES = 0;
 

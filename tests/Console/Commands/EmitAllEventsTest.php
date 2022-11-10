@@ -4,11 +4,10 @@ namespace Softonic\TransactionalEventPublisher\Tests\Console\Commands;
 
 use Illuminate\Contracts\Bus\Dispatcher as BusDispatcherContract;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Mockery;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
-use Softonic\TransactionalEventPublisher\Jobs\SendDomainEvents;
 use Softonic\TransactionalEventPublisher\Model\DomainEvent;
 use Softonic\TransactionalEventPublisher\TestCase;
-use Mockery;
 
 class EmitAllEventsTest extends TestCase
 {
