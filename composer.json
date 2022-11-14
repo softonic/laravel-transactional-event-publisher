@@ -25,7 +25,7 @@
     "test": [
       "@phpunit"
     ],
-    "phpunit": "phpunit test",
+    "phpunit": "phpunit tests",
     "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
     "fix-cs": "php-cs-fixer fix -v --diff --allow-risky=yes;"
   },
