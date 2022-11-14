@@ -189,7 +189,6 @@ $ docker-compose run phpunit
 
 License
 -------
-
 The Apache 2.0 license. Please see [LICENSE](LICENSE) for more information.
 
 [PSR-2]: http://www.php-fig.org/psr/psr-2/

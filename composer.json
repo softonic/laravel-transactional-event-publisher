@@ -9,17 +9,25 @@
     "issues": "https://github.com/softonic/laravel-transactional-event-publisher/issues"
   },
   "require": {
-    "php": ">=7.4",
-    "softonic/laravel-amqp": "2.1.0",
+    "php": ">=8.0",
+    "softonic/laravel-amqp": "^2.2.0",
     "laravel/framework": "^7.0 || ^8.0 || ^9.0"
   },
   "require-dev": {
-    "friendsofphp/php-cs-fixer": "^2.0 || ^3.0",
+    "friendsofphp/php-cs-fixer": "^3.0",
     "laravel/legacy-factories": "^1.0.4",
     "mockery/mockery": "^1.2",
     "orchestra/testbench": "^6.0 || ^7.0",
     "phpunit/phpunit": "^9.0",
     "php-mock/php-mock-mockery": "^1.3"
+  },
+  "scripts": {
+    "test": [
+      "@phpunit"
+    ],
+    "phpunit": "phpunit tests",
+    "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
+    "fix-cs": "php-cs-fixer fix -v --diff --allow-risky=yes;"
   },
   "autoload": {
     "psr-4": {
@@ -30,12 +38,6 @@
     "psr-4": {
       "Softonic\\TransactionalEventPublisher\\": "tests/"
     }
-  },
-  "scripts": {
-    "tests": "phpunit --coverage-text; php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
-    "phpunit": "phpunit --coverage-text",
-    "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
-    "fix-cs": "php-cs-fixer fix -v --diff --allow-risky=yes;"
   },
   "extra": {
     "laravel": {
