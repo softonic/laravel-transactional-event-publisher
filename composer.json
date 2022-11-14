@@ -21,6 +21,12 @@
     "phpunit/phpunit": "^9.0",
     "php-mock/php-mock-mockery": "^1.3"
   },
+  "scripts": {
+    "test": [
+      "@phpunit"
+    ],
+    "phpunit": "phpunit test"
+  },
   "autoload": {
     "psr-4": {
       "Softonic\\TransactionalEventPublisher\\": "src/"
