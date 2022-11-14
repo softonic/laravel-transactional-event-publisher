@@ -25,7 +25,9 @@
     "test": [
       "@phpunit"
     ],
-    "phpunit": "phpunit test"
+    "phpunit": "phpunit test",
+    "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
+    "fix-cs": "php-cs-fixer fix -v --diff --allow-risky=yes;"
   },
   "autoload": {
     "psr-4": {
@@ -36,12 +38,6 @@
     "psr-4": {
       "Softonic\\TransactionalEventPublisher\\": "tests/"
     }
-  },
-  "scripts": {
-    "tests": "phpunit --coverage-text; php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
-    "phpunit": "phpunit --coverage-text",
-    "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
-    "fix-cs": "php-cs-fixer fix -v --diff --allow-risky=yes;"
   },
   "extra": {
     "laravel": {
