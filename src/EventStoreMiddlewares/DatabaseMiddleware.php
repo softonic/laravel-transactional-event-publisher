@@ -25,10 +25,13 @@ class DatabaseMiddleware implements EventStoreMiddlewareContract
     public function store(EventMessageContract ...$messages)
     {
         try {
+            $inserts = [];
             foreach ($messages as $message) {
-                DB::beginTransaction();
-                DomainEvent::create(compact('message'));
+                $inserts[] = ['message' => serialize(clone $message)];
             }
+
+            DB::beginTransaction();
+            DomainEvent::insert($inserts);
             DB::commit();
 
             return true;
