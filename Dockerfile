@@ -1,3 +1,3 @@
-FROM composer:latest
+FROM composer:2.0
 
 RUN docker-php-ext-install sockets
