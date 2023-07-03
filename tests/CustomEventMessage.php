@@ -7,22 +7,14 @@ use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 
 class CustomEventMessage implements EventMessageContract
 {
-    /**
-     * EventMessageContract constructor.
-     *
-     * @param Model $model
-     * @param       $eventType
-     */
     public function __construct(Model $model, $eventType)
     {
     }
 
     /**
      * Returns the message in an array format.
-     *
-     * @return array
      */
-    public function toArray()
+    public function toArray(): array
     {
         return ['test'];
     }

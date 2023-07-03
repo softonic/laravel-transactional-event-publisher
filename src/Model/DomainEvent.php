@@ -2,11 +2,16 @@
 
 namespace Softonic\TransactionalEventPublisher\Model;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
+use Softonic\TransactionalEventPublisher\Database\Factories\DomainEventFactory;
 
 class DomainEvent extends Model
 {
+    use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -29,5 +34,13 @@ class DomainEvent extends Model
     public function getMessageAttribute($value)
     {
         return unserialize($value);
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): Factory
+    {
+        return DomainEventFactory::new();
     }
 }

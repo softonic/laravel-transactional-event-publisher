@@ -3,18 +3,16 @@
 namespace Softonic\TransactionalEventPublisher\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Softonic\TransactionalEventPublisher\CustomEventMessage;
-use Softonic\TransactionalEventPublisher\Model\DomainEvent;
-use Softonic\TransactionalEventPublisher\TestModel;
+use Softonic\TransactionalEventPublisher\Model\DomainEventsCursor;
 
-class DomainEventFactory extends Factory
+class DomainEventsCursorFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = DomainEvent::class;
+    protected $model = DomainEventsCursor::class;
 
     /**
      * Define the model's default state.
@@ -24,7 +22,7 @@ class DomainEventFactory extends Factory
     public function definition(): array
     {
         return [
-            'message' => new CustomEventMessage(new TestModel(), 'testEvent')
+            'last_id' => $this->faker->randomNumber(),
         ];
     }
 }

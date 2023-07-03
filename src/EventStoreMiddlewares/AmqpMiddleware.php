@@ -9,44 +9,19 @@ use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 
-/**
- * Class AmqpMiddleware
- *
- * @package Softonic\TransactionalEventPublisher\EventStoreMiddlewares
- */
 class AmqpMiddleware implements EventStoreMiddlewareContract
 {
-    private $messageFactory;
-
-    private $amqp;
-
-    private $properties;
-
-    /**
-     * AmqpMiddleware constructor.
-     *
-     * @param AmqpMessageFactory $messageFactory
-     * @param Amqp               $amqp
-     * @param array              $properties
-     */
     public function __construct(
-        AmqpMessageFactory $messageFactory,
-        Amqp $amqp,
-        array $properties
+        private readonly AmqpMessageFactory $messageFactory,
+        private readonly Amqp               $amqp,
+        private readonly array              $properties
     ) {
-        $this->messageFactory = $messageFactory;
-        $this->amqp           = $amqp;
-        $this->properties     = $properties;
     }
 
     /**
-     * Publishes the message to the AMQP Message broker.
-     *
-     * @param EventMessageContract $messages
-     *
-     * @return bool
+     * Publishes the messages to the AMQP Message broker.
      */
-    public function store(EventMessageContract ...$messages)
+    public function store(EventMessageContract ...$messages): bool
     {
         try {
             if (count($messages) === 1) {
@@ -77,12 +52,8 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
     }
 
     /**
-     * Returns the messsage routing key based in the configured parameters
+     * Returns the message routing key based in the configured parameters
      * or a default value based in service, eventType and modelName.
-     *
-     * @param EventMessageContract $message
-     *
-     * @return string
      */
     private function getRoutingKey(EventMessageContract $message): string
     {

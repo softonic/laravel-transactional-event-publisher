@@ -6,22 +6,12 @@ use LogicException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 
-/**
- * Class AmqpMessageFactory
- *
- * @package Softonic\TransactionalEventPublisher\Factories
- */
 class AmqpMessageFactory
 {
     /**
      * Makes a AMQPMessage object.
-     *
-     * @param EventMessageContract $eventMessage
-     * @param array                $properties
-     *
-     * @return AMQPMessage
      */
-    public function make(EventMessageContract $eventMessage, array $properties = [])
+    public function make(EventMessageContract $eventMessage, array $properties = []): AMQPMessage
     {
         $this->checkMessage($eventMessage->toArray());
 
@@ -31,7 +21,7 @@ class AmqpMessageFactory
         );
     }
 
-    private function checkMessage(array $message)
+    private function checkMessage(array $message): void
     {
         if (empty(array_filter($message))) {
             throw new LogicException('No message provided');

@@ -1,5 +1,9 @@
 <?php
 
+use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
+use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware;
+use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -13,23 +17,21 @@ return [
     | Middleware class where the event messages will be stored.
     |--------------------------------------------------------------------------
     */
-    'middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
+    'middleware' => DatabaseMiddleware::class,
 
     /*
     |--------------------------------------------------------------------------
-    | Middleware that publishes the events when using AsyncMiddleware.
+    | Middleware that publishes the events.
     |--------------------------------------------------------------------------
     */
-    'event_publisher_middleware' => null,
-
-    //'event_publisher_middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
+    'event_publisher_middleware' => AmqpMiddleware::class,
 
     /*
     |--------------------------------------------------------------------------
     | Event Message class.
     |--------------------------------------------------------------------------
     */
-    'message' =>  \Softonic\TransactionalEventPublisher\ValueObjects\EventMessage::class,
+    'message' => EventMessage::class,
 
     /*
     |--------------------------------------------------------------------------
@@ -38,21 +40,21 @@ return [
     */
     'properties' => [
         'amqp' => [
-            'host'                => env('AMQP_HOST', 'localhost'),
-            'port'                => env('AMQP_PORT',5672),
-            'username'            => env('AMQP_USER','guest'),
-            'password'            => env('AMQP_PASSWORD','guest'),
-            'vhost'               => env('AMQP_VHOST', 'domain-events'),
-            'exchange'            => env('AMQP_EXCHANGE', 'domain-events'),
-            'exchange_type'       => 'topic',
-            'exchange_durable'    => true,
-            'consumer_tag'        => 'consumer',
-            'ssl_options'         => [ ], // See https://secure.php.net/manual/en/context.ssl.php
-            'connect_options'     => [ ], // See https://github.com/php-amqplib/php-amqplib/blob/master/PhpAmqpLib/Connection/AMQPSSLConnection.php
-            'queue_properties'    => [ 'x-ha-policy' => [ 'S', 'all' ] ],
-            'exchange_properties' => [ ],
-            'timeout'             => 0,
-            'routing_key_fields'  => ['service', 'eventType', 'modelName'], // You can use any of the public attributes of your message, they are merged with '.'
+            'host' => env('AMQP_HOST', 'localhost'),
+            'port' => env('AMQP_PORT', 5672),
+            'username' => env('AMQP_USER', 'guest'),
+            'password' => env('AMQP_PASSWORD', 'guest'),
+            'vhost' => env('AMQP_VHOST', 'domain-events'),
+            'exchange' => env('AMQP_EXCHANGE', 'domain-events'),
+            'exchange_type' => 'topic',
+            'exchange_durable' => true,
+            'consumer_tag' => 'consumer',
+            'ssl_options' => [], // See https://secure.php.net/manual/en/context.ssl.php
+            'connect_options' => [], // See https://github.com/php-amqplib/php-amqplib/blob/master/PhpAmqpLib/Connection/AMQPSSLConnection.php
+            'queue_properties' => ['x-ha-policy' => ['S', 'all']],
+            'exchange_properties' => [],
+            'timeout' => 0,
+            'routing_key_fields' => ['service', 'eventType', 'modelName'], // You can use any of the public attributes of your message, they are merged with '.'
         ],
     ],
 ];
