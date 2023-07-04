@@ -8,11 +8,12 @@ return new class extends Migration {
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::create('domain_events', function (Blueprint $table) {
-            $table->increments('id');
-            $table->text('message');
+        Schema::create('domain_events_cursor', static function (Blueprint $table) {
+            $table->unsignedInteger('last_id')
+                ->comment('ID from the last domain event emitted')
+                ->primary();
         });
     }
 
@@ -21,6 +22,6 @@ return new class extends Migration {
      */
     public function down()
     {
-        Schema::drop('domain_events');
+        Schema::dropIfExists('domain_events_cursor');
     }
 };

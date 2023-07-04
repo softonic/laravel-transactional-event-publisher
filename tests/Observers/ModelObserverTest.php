@@ -11,7 +11,10 @@ use Softonic\TransactionalEventPublisher\TestCase;
 
 class ModelObserverTest extends TestCase
 {
-    public function testWhenANewItemIsCreatedShouldStoreTheEventMessage()
+    /**
+     * @test
+     */
+    public function whenANewItemIsCreatedShouldStoreTheEventMessage()
     {
         $eventStoreResult = true;
 
@@ -38,7 +41,10 @@ class ModelObserverTest extends TestCase
         self::assertTrue($modelObserver->created($modelMock));
     }
 
-    public function testWhenANewItemIsCreatedButTheEventStoreFailsWhenStoring()
+    /**
+     * @test
+     */
+    public function whenANewItemIsCreatedButTheEventStoreFailsWhenStoring()
     {
         $this->expectException(EventStoreFailedException::class);
 
@@ -66,7 +72,10 @@ class ModelObserverTest extends TestCase
         $modelObserver->created($modelMock);
     }
 
-    public function testWhenAnItemIsUpdatedShouldStoreTheEventMessage()
+    /**
+     * @test
+     */
+    public function whenAnItemIsUpdatedShouldStoreTheEventMessage()
     {
         $eventStoreResult = true;
 
@@ -93,7 +102,10 @@ class ModelObserverTest extends TestCase
         self::assertTrue($modelObserver->updated($modelMock));
     }
 
-    public function testWhenAnItemIsUpdatedButTheEventStoreFailsWhenStoring()
+    /**
+     * @test
+     */
+    public function whenAnItemIsUpdatedButTheEventStoreFailsWhenStoring()
     {
         $this->expectException(EventStoreFailedException::class);
 
@@ -121,7 +133,10 @@ class ModelObserverTest extends TestCase
         $modelObserver->updated($modelMock);
     }
 
-    public function testWhenAnItemDeletedShouldStoreTheEventMessage()
+    /**
+     * @test
+     */
+    public function whenAnItemDeletedShouldStoreTheEventMessage()
     {
         $eventStoreResult = true;
 
@@ -148,7 +163,10 @@ class ModelObserverTest extends TestCase
         self::assertTrue($modelObserver->deleted($modelMock));
     }
 
-    public function testWhenAnItemIsDeletedButTheEventStoreFailsWhenStoring()
+    /**
+     * @test
+     */
+    public function whenAnItemIsDeletedButTheEventStoreFailsWhenStoring()
     {
         $this->expectException(EventStoreFailedException::class);
         $eventStoreResult = false;
@@ -175,7 +193,10 @@ class ModelObserverTest extends TestCase
         $modelObserver->deleted($modelMock);
     }
 
-    public function testWhenItemIsCreatedWithMultipleMiddlewaresShouldStoreTheEventMessagesInAllTheMiddlewares()
+    /**
+     * @test
+     */
+    public function whenItemIsCreatedWithMultipleMiddlewaresShouldStoreTheEventMessagesInAllTheMiddlewares()
     {
         $eventStoreResult = true;
 

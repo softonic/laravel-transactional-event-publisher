@@ -11,7 +11,7 @@ class EventMessageStub implements EventMessageContract
     {
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return [
         ];

@@ -9,35 +9,47 @@
     "issues": "https://github.com/softonic/laravel-transactional-event-publisher/issues"
   },
   "require": {
-    "php": ">=8.0",
+    "php": "^8.1",
     "softonic/laravel-amqp": "^2.2.0",
     "laravel/framework": "^9.0"
   },
   "require-dev": {
-    "friendsofphp/php-cs-fixer": "^3.0",
-    "laravel/legacy-factories": "^1.0.4",
-    "mockery/mockery": "^1.2",
-    "orchestra/testbench": "^7.0",
     "phpunit/phpunit": "^9.0",
+    "mockery/mockery": "^1.2",
+    "friendsofphp/php-cs-fixer": "^3.6",
+    "squizlabs/php_codesniffer": "^3",
+    "rector/rector": "^0.11.20",
+    "laravel/legacy-factories": "^1.0.4",
+    "orchestra/testbench": "^7.0",
     "php-mock/php-mock-mockery": "^1.3"
-  },
-  "scripts": {
-    "test": [
-      "@phpunit"
-    ],
-    "phpunit": "phpunit tests",
-    "phpcs": "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes;",
-    "fix-cs": "php-cs-fixer fix -v --diff --allow-risky=yes;"
   },
   "autoload": {
     "psr-4": {
-      "Softonic\\TransactionalEventPublisher\\": "src/"
+      "Softonic\\TransactionalEventPublisher\\": "src/",
+      "Softonic\\TransactionalEventPublisher\\Database\\Factories\\": "database/factories/"
     }
   },
   "autoload-dev": {
     "psr-4": {
       "Softonic\\TransactionalEventPublisher\\": "tests/"
     }
+  },
+  "scripts": {
+    "test": [
+      "@checkstyle",
+      "@phpunit"
+    ],
+    "phpunit": "phpunit --coverage-text",
+    "checkstyle": [
+      "php-cs-fixer fix -v --diff --dry-run --allow-risky=yes",
+      "rector --dry-run"
+    ],
+    "fix-checkstyle": [
+      "@php-cs-fixer",
+      "@rector"
+    ],
+    "php-cs-fixer": "php-cs-fixer fix -v --diff --allow-risky=yes",
+    "rector": "rector"
   },
   "extra": {
     "laravel": {

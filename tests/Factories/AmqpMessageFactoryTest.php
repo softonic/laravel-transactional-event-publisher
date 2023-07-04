@@ -11,7 +11,10 @@ use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class AmqpMessageFactoryTest extends TestCase
 {
-    public function testWhenNoMessageShouldThrowALogicException()
+    /**
+     * @test
+     */
+    public function whenNoMessageShouldThrowALogicException()
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('No message provided');
@@ -24,7 +27,10 @@ class AmqpMessageFactoryTest extends TestCase
         $factory->make($eventMessageMock);
     }
 
-    public function testWhenRoutingKeyProvidedAndMessageShouldCreateAnAMQPMessageObject()
+    /**
+     * @test
+     */
+    public function whenRoutingKeyProvidedAndMessageShouldCreateAnAMQPMessageObject()
     {
         $factory      = new AmqpMessageFactory();
         $eventMessage = Mockery::mock(EventMessage::class);

@@ -1,19 +1,21 @@
 <?php
 
-namespace Softonic\TransactionalEventPublisher\Tests\EventStoreMiddlewares;
+namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
 use Illuminate\Support\Facades\Log;
 use Mockery;
 use PhpAmqpLib\Message\AMQPMessage;
 use Softonic\Amqp\Amqp;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
-use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class AmqpMiddlewareTest extends TestCase
 {
-    public function testWhenStoringAMessageThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
+    /**
+     * @test
+     */
+    public function whenStoringAMessageThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
     {
         $message     = $this->getOneMessage();
         $amqpMessage = new AMQPMessage();
@@ -52,7 +54,10 @@ class AmqpMiddlewareTest extends TestCase
         return $message;
     }
 
-    public function testWhenStoringMultipleMessagesThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
+    /**
+     * @test
+     */
+    public function whenStoringMultipleMessagesThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
     {
         $messages = $this->getTwoMessages();
 
@@ -98,7 +103,10 @@ class AmqpMiddlewareTest extends TestCase
         ];
     }
 
-    public function testWhenStoringAMessageShouldReturnTrue()
+    /**
+     * @test
+     */
+    public function whenStoringAMessageShouldReturnTrue()
     {
         $message     = $this->getOneMessage();
         $properties  = ['AMQP properties'];
@@ -121,7 +129,10 @@ class AmqpMiddlewareTest extends TestCase
         self::assertTrue($amqpMiddleware->store($message));
     }
 
-    public function testWhenStoringMultipleMessagesShouldReturnTrue()
+    /**
+     * @test
+     */
+    public function whenStoringMultipleMessagesShouldReturnTrue()
     {
         $messages          = $this->getTwoMessages();
         $properties        = ['AMQP properties'];

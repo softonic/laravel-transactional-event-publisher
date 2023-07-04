@@ -1,31 +1,7 @@
-version: "3.7"
+version: '3.8'
 
 services:
-  php:
+  composer:
     volumes:
-    - ./:/app
-    build: .
-
-  install:
-    volumes:
-    - ./:/app
-    build: .
-    command: composer install
-
-  phpunit:
-    volumes:
-    - ./:/app
-    build: .
-    command: composer phpunit
-
-  test:
-    volumes:
-    - ./:/app
-    build: .
-    command: composer run tests
-
-  fixcs:
-    volumes:
-    - ./:/app
-    build: .
-    command: composer run fix-cs
+      - ./:/app
+    image: softonic/composer-rector:latest

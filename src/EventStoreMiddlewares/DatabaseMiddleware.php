@@ -6,23 +6,14 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
-use Softonic\TransactionalEventPublisher\Model\DomainEvent;
+use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 
-/**
- * Class DatabaseMiddleware
- *
- * @package Softonic\TransactionalEventPublisher\EventStoreMiddlewares
- */
 class DatabaseMiddleware implements EventStoreMiddlewareContract
 {
     /**
-     * Store the messages in database.
-     *
-     * @param EventMessageContract[] $messages
-     *
-     * @return bool
+     * Stores the messages in database.
      */
-    public function store(EventMessageContract ...$messages)
+    public function store(EventMessageContract ...$messages): bool
     {
         try {
             $inserts = [];

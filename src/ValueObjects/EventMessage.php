@@ -29,28 +29,7 @@ class EventMessage implements EventMessageContract
         $this->createdAt = date('Y-m-d H:i:s');
     }
 
-    private function buildEventName($modelName, $event)
-    {
-        return $modelName . ucfirst($event);
-    }
-
-    /**
-     * @return string
-     */
-    public function __toString()
-    {
-        return serialize($this->toArray());
-    }
-
-    public function jsonSerialize()
-    {
-        return $this->toArray();
-    }
-
-    /**
-     * @return array
-     */
-    public function toArray()
+    public function toArray(): array
     {
         return [
             'service'   => $this->service,
@@ -58,5 +37,20 @@ class EventMessage implements EventMessageContract
             'createdAt' => $this->createdAt,
             'payload'   => $this->payload,
         ];
+    }
+
+    private function buildEventName($modelName, $event)
+    {
+        return $modelName . ucfirst($event);
+    }
+
+    public function __toString(): string
+    {
+        return serialize($this->toArray());
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 }

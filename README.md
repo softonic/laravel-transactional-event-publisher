@@ -28,102 +28,45 @@ composer require softonic/laravel-transactional-event-publisher
 
 ### Configuration
 
-It is possible to configure the basic AMQP information, you can check it in `vendor/softonic/transactional-event-publisher.php/config/transactional-event-publisher.php` 
+It is possible to configure the basic AMQP information, you can check it in `vendor/softonic/transactional-event-publisher/config/transactional-event-publisher.php` 
 
 If you need further customization, you can publish the configuration.
 ```bash
 php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\ServiceProvider" --tag=config
 ```
 
-We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware`, 
- `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware` 
- and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AsyncMiddleware` middlewares to send events.
-
-#### Sync AMQP middleware 
-
-To use the sync AMQP you just need to configure the AMQP connection using the configuration file or environmental variables. 
-As you could see, in the configuration you won't be able to define a queue. This is because the library just publishes the message to an exchange and is the events collector responsability to declare the needed queues with the needed bindings.
- 
-#### Async middleware
-
-The async middleware is just responsible to delay the action, so you need to configure the real middleware that is who will publish the messages. For example:
-```php
-    /*
-     |--------------------------------------------------------------------------
-     | Middleware that publishes the events when using AsyncMiddleware.
-     |--------------------------------------------------------------------------
-     */
-    'event_publisher_middleware' => \Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware::class,
-```
-If you want to use the AMQP middleware in async, remember to do the Sync AMQP middleware steps and continue with these:
-
-* Create the job table if you don't have it in the project
-```bash
-php artisan queue:table
-php artisan migrate
-```
-* Run a worker to actually send the events
-```bash
-php artisan queue:work database --timeout=350 --queue=retryDomainEvent,domainEvents
-```
-
-The job table is needed because to ensure that a job is dispatched after an action, we need to do a transaction, so the *job must use the database driver*.
-
-There are two queues so the library is able to retry a job without losing order in the jobs. The retry uses exponential backoff, so the timeout should be bigger than that plus the processing time. The maximmum amount of time from exponential backoff is 324 (18^2) seconds.
+We provide `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware`
+and `Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware` middlewares to store and send events.
 
 #### Database middleware
 
-This middleware just store the events in a table in database. It can be useful if you want to expose the events as a REST endpoint or check your events history.
+This middleware just stores the events in a table in database. It can be useful if you want to expose the events as a REST endpoint or check your events history.
 
 To configure this middleware you need to publish the migrations
 ```bash
 php artisan vendor:publish --provider="Softonic\TransactionalEventPublisher\ServiceProvider" --tag=migrations
 ```
-and execute the migrations
+and execute them
 ```bash
 php artisan migrate
 ```
 
-### Registering Models
+#### Amqp middleware
 
-To choose what models should send domain events, you need to attach the `\Softonic\TransactionalEventPublisher\ModelObserver` observer class.
+This middleware publishes the events to an AMQP system. You just need to configure the AMQP connection using the configuration file or environmental variables.
+As you can see, in the configuration you won't be able to define a queue. This is because the library just publishes the message to an exchange and is the events collector responsibility to declare the needed queues with the needed bindings.
 
-Example:
+### Publishing events in batches to improve performance
 
-```
-...
+We provide a command to continuously publish events in batches.
+You can find its signature in `Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents`.
+It will publish the events in batches of 100 by default if the option is not set.
+You just need to create a job that will run indefinitely with the command `php artisan event-sourcing:emit`.
 
-use App\Post as MyModel;
+#### Sending all the events stored in database
 
-class AppServiceProvider extends ServiceProvider
-{
-    public function boot()
-    {
-        MyModel::observe(\Softonic\TransactionalEventPublisher\Observers\ModelObserver::class);
-    }
-    ...
-}
-```
-
-### Custom middlewares
-
-The middlewares should implement the `Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract` interface.
-Its purpose is store the domain event provided, so you can implement any storage for domain events.
-
-### Custom messages
-
-The `transactional-event.message` class must implements `EventMessageContract` and `transactional-event.middleware` class must implements `EventStoreMiddlewareContract`
-
-### Sending all the events stored in database
-
-Sometimes you will need to send all events stored in the database. To do this, you can use the command `php artisan tinker event-sourcing:emit-all`.
-
-The command allows you to use a specific queue connection to emit all the events and a specific database connection with unbuffered connection.
-These parameters are optional but allows you to send several millions of events in a short time without consume a lot of memory.
-
-The `queueConnection` argument lets you choose a high performance queue driver like redis.
-The `--unbufferedConnection` options allows you to use [unbuffered queries](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html) in MySQL to retrieve a large amount of rows without consuming all the memory.
-
+Sometimes you will need to send all the events stored in the database. To do it, you can run the previous command with the option `--allEvents`.
+You also have the option to use a [MySQL unbuffered connection](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html) with the option `--unbufferedConnection` to retrieve a large amount of events without consuming all the memory.
 Unbuffered connection example from `config/database.php`
 ```php
 return [
@@ -149,7 +92,39 @@ return [
 ];
 ```
 
-To reduce the time of the whole process, you can use a `--batchSize` higher than 1 to send the events in batches.
+### Registering Models
+
+To choose what models should send domain events, you need to attach the `\Softonic\TransactionalEventPublisher\ModelObserver` observer class.
+
+Example:
+
+```
+...
+
+use App\Models\Post as MyModel;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
+
+class EventServiceProvider extends ServiceProvider
+{
+    public function boot()
+    {
+        parent::boot();
+
+        MyModel::observe(ModelObserver::class);
+    }
+    ...
+}
+```
+
+### Custom middlewares
+
+The middlewares should implement the `Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract` interface.
+Its purpose is to store the domain event provided, so you can implement any storage for domain events.
+
+### Custom messages
+
+The `transactional-event.message` class must implement `EventMessageContract` and `transactional-event.middleware` class must implement `EventStoreMiddlewareContract`.
 
 Considerations
 ==============
@@ -161,30 +136,22 @@ This package begins a database transaction in the following Eloquent Model event
 * deleting
 
 And commit the database transaction when the event store middleware stores the event message successfully. On the other hand, if the event store couldn't store the event message would be a database rollback for the two operations (Eloquent model write + event message storing).
-
 Take into account if an error occurs between the event of creating/updating/deleting and created/updated/deleted the transaction would remain started until the connection had been closed.
-
 
 Testing
 -------
 
 `softonic/laravel-transactional-event-publisher` has a [PHPUnit](https://phpunit.de) test suite and a coding style compliance test suite using [PHP CS Fixer](http://cs.sensiolabs.org/).
 
-To run the tests and php-cs-fixer, run the following command from the project folder.
+To run the tests, run the following command from the project folder.
 
 ``` bash
-$ docker-compose run test
+$ make tests
 ```
 
-To run interactively using [PsySH](http://psysh.org/):
+To open a terminal in the dev environment:
 ``` bash
-$ docker-compose run psysh
-```
-
-To run phpunit tests, run the following command from the project folder:
-
-```bash
-$ docker-compose run phpunit
+$ make debug
 ```
 
 License

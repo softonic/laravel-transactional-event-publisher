@@ -7,13 +7,14 @@ use Orchestra\Testbench\TestCase as TestbenchTestCase;
 
 class TestCase extends TestbenchTestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
+
         $this->withFactories(__DIR__ . '/../database/factories');
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         if (class_exists('Mockery')) {
             if ($container = Mockery::getContainer()) {
@@ -22,5 +23,7 @@ class TestCase extends TestbenchTestCase
 
             Mockery::close();
         }
+
+        parent::tearDown();
     }
 }
