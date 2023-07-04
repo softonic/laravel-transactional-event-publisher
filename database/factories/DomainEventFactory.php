@@ -4,7 +4,7 @@ namespace Softonic\TransactionalEventPublisher\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Softonic\TransactionalEventPublisher\CustomEventMessage;
-use Softonic\TransactionalEventPublisher\Model\DomainEvent;
+use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 use Softonic\TransactionalEventPublisher\TestModel;
 
 class DomainEventFactory extends Factory

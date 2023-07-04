@@ -6,7 +6,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
-use Softonic\TransactionalEventPublisher\Model\DomainEvent;
+use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 
 class DatabaseMiddleware implements EventStoreMiddlewareContract
 {

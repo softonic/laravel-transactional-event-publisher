@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 use RuntimeException;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
-use Softonic\TransactionalEventPublisher\Model\DomainEvent;
-use Softonic\TransactionalEventPublisher\Model\DomainEventsCursor;
+use Softonic\TransactionalEventPublisher\Models\DomainEvent;
+use Softonic\TransactionalEventPublisher\Models\DomainEventsCursor;
 
 class EmitEvents extends Command
 {
@@ -104,7 +104,7 @@ class EmitEvents extends Command
 
         try {
             $events->chunk($this->batchSize)->each($this->sendEvents(...));
-        } catch (RuntimeException $e) {
+        } catch (Exception $e) {
             $this->waitExponentialBackOffForErrors();
 
             return;
@@ -132,10 +132,11 @@ class EmitEvents extends Command
         } catch (Exception $e) {
             $this->cursor->discardChanges();
 
-            $this->waitExponentialBackOffForErrors();
+            throw $e;
         }
 
         $this->eventsProcessed = true;
+        $this->attemptForErrors = $this->attemptForNoEvents = 1;
     }
 
     private function waitExponentialBackOffForErrors(): void

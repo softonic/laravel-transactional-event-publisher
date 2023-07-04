@@ -1,6 +1,6 @@
 <?php
 
-namespace Softonic\TransactionalEventPublisher\Model;
+namespace Softonic\TransactionalEventPublisher\Models;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

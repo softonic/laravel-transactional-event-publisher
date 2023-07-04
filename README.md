@@ -58,7 +58,7 @@ As you can see, in the configuration you won't be able to define a queue. This i
 
 ### Publishing events in batches to improve performance
 
-We provide a command to continuously publish events in batches in real time.
+We provide a command to continuously publish events in batches.
 You can find its signature in `Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents`.
 It will publish the events in batches of 100 by default if the option is not set.
 You just need to create a job that will run indefinitely with the command `php artisan event-sourcing:emit`.

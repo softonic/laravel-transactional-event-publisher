@@ -10,8 +10,8 @@ use Mockery;
 use phpmock\mockery\PHPMockery;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
-use Softonic\TransactionalEventPublisher\Model\DomainEvent;
-use Softonic\TransactionalEventPublisher\Model\DomainEventsCursor;
+use Softonic\TransactionalEventPublisher\Models\DomainEvent;
+use Softonic\TransactionalEventPublisher\Models\DomainEventsCursor;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class EmitEventsTest extends TestCase
@@ -108,6 +108,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(0);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(2, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -127,6 +129,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(0);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(6, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -143,6 +147,48 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(1);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+    }
+
+    /**
+     * @test
+     */
+    public function whenSendingABatchAfterThreeAttemptsWithErrorsItShouldPublishItAndResetAttempts(): void
+    {
+        $this->emitEvents->attemptForErrors = 4;
+
+        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
+        $event = DomainEvent::factory()->create();
+
+        $this->whenEventsArePublished(fn (...$eventMessages) => $event['message']->toArray() === $eventMessages[0]->toArray());
+
+        $this->emitEvents->cursor = $cursor;
+        $this->emitEvents->sendBatch();
+
+        $this->checkFinalCursor(1);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+    }
+
+    /**
+     * @test
+     */
+    public function whenSendingABatchAfterFiveAttemptsWithNoEventsItShouldPublishItAndResetAttempts(): void
+    {
+        $this->emitEvents->attemptForNoEvents = 6;
+
+        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
+        $event = DomainEvent::factory()->create();
+
+        $this->whenEventsArePublished(fn (...$eventMessages) => $event['message']->toArray() === $eventMessages[0]->toArray());
+
+        $this->emitEvents->cursor = $cursor;
+        $this->emitEvents->sendBatch();
+
+        $this->checkFinalCursor(1);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -159,6 +205,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(2);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -176,6 +224,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(3);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -193,6 +243,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(5);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -209,6 +261,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(3);
+        self::assertEquals(1, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -235,6 +289,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(0);
+        self::assertEquals(2, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -259,6 +315,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(0);
+        self::assertEquals(2, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -285,6 +343,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(0);
+        self::assertEquals(4, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     /**
@@ -311,6 +371,8 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->sendBatch();
 
         $this->checkFinalCursor(0);
+        self::assertEquals(8, $this->emitEvents->attemptForErrors);
+        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
     }
 
     private function whenEventsArePublished(Closure $closure): void

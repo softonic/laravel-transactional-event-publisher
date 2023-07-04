@@ -3,7 +3,7 @@
 namespace Softonic\TransactionalEventPublisher\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Softonic\TransactionalEventPublisher\Model\DomainEventsCursor;
+use Softonic\TransactionalEventPublisher\Models\DomainEventsCursor;
 
 class DomainEventsCursorFactory extends Factory
 {
