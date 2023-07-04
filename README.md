@@ -60,32 +60,32 @@ As you can see, in the configuration you won't be able to define a queue. This i
 
 We provide a command to continuously publish events in batches.
 You can find its signature in `Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents`.
-It will publish the events in batches of 100 by default if the option is not set.
+It will publish the events in batches of 100 by default, or you can change it with the option `--batchSize`.
 You just need to create a job that will run indefinitely with the command `php artisan event-sourcing:emit`.
 
 #### Sending all the events stored in database
 
 Sometimes you will need to send all the events stored in the database. To do it, you can run the previous command with the option `--allEvents`.
-You also have the option to use a [MySQL unbuffered connection](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html) with the option `--unbufferedConnection` to retrieve a large amount of events without consuming all the memory.
+You also have the option to use a [MySQL unbuffered connection](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html) with the option `--dbConnection` to retrieve a large amount of events without consuming all the memory.
 Unbuffered connection example from `config/database.php`
 ```php
 return [
     'connections' => [
         'mysql-unbuffered' => [
-            'driver' => 'mysql',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'forge'),
-            'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', ''),
+            'driver'      => 'mysql',
+            'host'        => env('DB_HOST', '127.0.0.1'),
+            'port'        => env('DB_PORT', '3306'),
+            'database'    => env('DB_DATABASE', 'forge'),
+            'username'    => env('DB_USERNAME', 'forge'),
+            'password'    => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => 'utf8',
-            'collation' => 'utf8_unicode_ci',
-            'prefix' => '',
-            'strict' => true,
-            'engine' => null,
-            'options'   => [
-                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => false // This option enabled the unbuffered queries.
+            'charset'     => 'utf8',
+            'collation'   => 'utf8_unicode_ci',
+            'prefix'      => '',
+            'strict'      => true,
+            'engine'      => null,
+            'options'     => [
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => false,
             ],
         ],
     ]
