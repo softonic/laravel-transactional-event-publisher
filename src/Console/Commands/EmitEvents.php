@@ -127,13 +127,19 @@ class EmitEvents extends Command
             throw new RuntimeException($errorMessage);
         }
 
+        $lastId = $events->last()->id;
+
         try {
-            $this->cursor->update(['last_id' => $events->last()->id]);
+            $this->cursor->update(['last_id' => $lastId]);
         } catch (Exception $e) {
             $this->cursor->discardChanges();
 
             throw $e;
         }
+
+        $eventMessagesCount = count($eventMessages);
+
+        Log::info("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
 
         $this->eventsProcessed = true;
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
