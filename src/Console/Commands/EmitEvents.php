@@ -56,8 +56,8 @@ class EmitEvents extends Command
         $this->eventPublisherMiddleware = $eventPublisherMiddleware;
 
         $this->databaseConnection = $this->option('dbConnection');
-        $this->batchSize          = (int)$this->option('batchSize');
-        $resetCursor              = $this->option('allEvents');
+        $this->batchSize = (int)$this->option('batchSize');
+        $resetCursor = $this->option('allEvents');
 
         $this->cursor = $this->getInitialCursor($resetCursor);
 
@@ -92,7 +92,7 @@ class EmitEvents extends Command
     public function sendBatch(): void
     {
         $this->eventsProcessed = false;
-        $lastId                = $this->cursor->last_id;
+        $lastId = $this->cursor->last_id;
 
         try {
             $events = DomainEvent::on($this->databaseConnection)->where('id', '>', $lastId)->cursor();
@@ -127,10 +127,7 @@ class EmitEvents extends Command
             throw new RuntimeException($errorMessage);
         }
 
-        $lastId             = $events->last()->id;
-        $eventMessagesCount = count($eventMessages);
-
-        Log::info("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
+        $lastId = $events->last()->id;
 
         try {
             $this->cursor->update(['last_id' => $lastId]);
@@ -140,7 +137,11 @@ class EmitEvents extends Command
             throw $e;
         }
 
-        $this->eventsProcessed  = true;
+        $eventMessagesCount = count($eventMessages);
+
+        Log::info("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
+
+        $this->eventsProcessed = true;
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
     }
 
