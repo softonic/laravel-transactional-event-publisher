@@ -279,7 +279,7 @@ class EmitEventsTest extends TestCase
 
         Log::shouldReceive('alert')
             ->once()
-            ->with("The events couldn't be sent. Retrying messages: " . json_encode([$event['message']]));
+            ->with("The events couldn't be sent. Retrying...", ['eventMessages' => [$event['message']]]);
 
         PHPMockery::mock(__NAMESPACE__, 'sleep')
             ->once()
@@ -296,14 +296,54 @@ class EmitEventsTest extends TestCase
     /**
      * @test
      */
+    public function whenSendingABatchButTheCursorAndTheNumberOfEventsIsNotConsistentItShouldLogAnErrorAndWaitAndDoNotChangeCursor(): void
+    {
+        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
+        $event = DomainEvent::factory()->create();
+
+        $this->eventPublisherMiddleware->shouldNotReceive('store');
+
+        Log::shouldReceive('error')
+            ->once()
+            ->with(
+                'Mismatch in the events to send. Retrying...',
+                [
+                    'previousLastId' => 0,
+                    'eventMessagesCount' => 1,
+                    'lastId' => 1,
+                ]
+            );
+
+        PHPMockery::mock(__NAMESPACE__, 'sleep')
+            ->once()
+            ->with(1);
+
+        $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
+        $emitEvents->__construct();
+        $emitEvents->shouldAllowMockingProtectedMethods();
+        $emitEvents->shouldReceive('isCursorConsistentWithMessages')->once()->andReturnFalse();
+
+        $emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
+        $emitEvents->databaseConnection = 'testing';
+        $emitEvents->batchSize = 2;
+        $emitEvents->cursor = $cursor;
+        $emitEvents->sendBatch();
+
+        self::assertEquals(0, $emitEvents->cursor->last_id);
+        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => 0]);
+        self::assertEquals(2, $emitEvents->attemptForErrors);
+        self::assertEquals(1, $emitEvents->attemptForNoEvents);
+    }
+
+    /**
+     * @test
+     */
     public function whenSendingABatchAndThereIsAnErrorSavingTheCursorItShouldWaitAndRestoreTheCursor(): void
     {
         $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         DomainEvent::factory()->create();
 
-        $this->eventPublisherMiddleware->shouldReceive('store')
-            ->once()
-            ->andReturnTrue();
+        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
 
         DomainEventsCursor::saving(fn () => throw new Exception());
 
@@ -329,9 +369,7 @@ class EmitEventsTest extends TestCase
         $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         DomainEvent::factory()->create();
 
-        $this->eventPublisherMiddleware->shouldReceive('store')
-            ->once()
-            ->andReturnTrue();
+        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
 
         DomainEventsCursor::saving(fn () => throw new Exception());
 
@@ -357,9 +395,7 @@ class EmitEventsTest extends TestCase
         $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         DomainEvent::factory()->create();
 
-        $this->eventPublisherMiddleware->shouldReceive('store')
-            ->once()
-            ->andReturnTrue();
+        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
 
         DomainEventsCursor::saving(fn () => throw new Exception());
 

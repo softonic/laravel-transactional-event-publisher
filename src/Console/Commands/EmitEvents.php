@@ -120,14 +120,17 @@ class EmitEvents extends Command
         // Transform the events to the format expected by the event publisher
         $eventMessages = $events->pluck('message');
 
+        $lastId = $events->last()->id;
+        $eventMessagesCount = count($eventMessages);
+
+        $this->checkCursorConsistencyWithEvents($eventMessagesCount, $lastId);
+
         if (!$this->eventPublisherMiddleware->store(...$eventMessages)) {
-            $errorMessage = "The events couldn't be sent. Retrying messages: " . json_encode($eventMessages);
-            Log::alert($errorMessage);
+            $errorMessage = "The events couldn't be sent. Retrying...";
+            Log::alert($errorMessage, ['eventMessages' => $eventMessages->toArray()]);
 
             throw new RuntimeException($errorMessage);
         }
-
-        $lastId = $events->last()->id;
 
         try {
             $this->cursor->update(['last_id' => $lastId]);
@@ -137,12 +140,30 @@ class EmitEvents extends Command
             throw $e;
         }
 
-        $eventMessagesCount = count($eventMessages);
-
         Log::info("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
 
         $this->eventsProcessed = true;
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
+    }
+
+    private function checkCursorConsistencyWithEvents(int $eventMessagesCount, int $lastId): void
+    {
+        $previousLastId = DomainEventsCursor::first()->last_id;
+
+        if (!$this->isCursorConsistentWithMessages($previousLastId, $eventMessagesCount, $lastId)) {
+            $errorMessage = 'Mismatch in the events to send. Retrying...';
+            Log::error(
+                $errorMessage,
+                compact('previousLastId', 'eventMessagesCount', 'lastId')
+            );
+
+            throw new RuntimeException($errorMessage);
+        }
+    }
+
+    protected function isCursorConsistentWithMessages(int $previousLastId, int $eventMessagesCount, int $lastId): bool
+    {
+        return $previousLastId + $eventMessagesCount === $lastId;
     }
 
     private function waitExponentialBackOffForErrors(): void
