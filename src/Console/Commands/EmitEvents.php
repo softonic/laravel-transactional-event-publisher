@@ -123,7 +123,14 @@ class EmitEvents extends Command
         $lastId = $events->last()->id;
         $eventMessagesCount = count($eventMessages);
 
-        $this->ensureAllMessagesAreSent($eventMessagesCount, $lastId, $eventMessages);
+        $this->checkCursorConsistencyWithEvents($eventMessagesCount, $lastId, $eventMessages->toArray());
+
+        if (!$this->eventPublisherMiddleware->store(...$eventMessages)) {
+            $errorMessage = "The events couldn't be sent. Retrying...";
+            Log::alert($errorMessage, ['eventMessages' => $eventMessages->toArray()]);
+
+            throw new RuntimeException($errorMessage);
+        }
 
         try {
             $this->cursor->update(['last_id' => $lastId]);
@@ -139,20 +146,12 @@ class EmitEvents extends Command
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
     }
 
-    private function ensureAllMessagesAreSent(int $eventMessagesCount, int $lastId, LazyCollection $eventMessages): void
+    private function checkCursorConsistencyWithEvents(int $eventMessagesCount, int $lastId, array $eventMessages): void
     {
-        if (!$this->eventPublisherMiddleware->store(...$eventMessages)) {
-            $errorMessage = "The events couldn't be sent. Retrying...";
-            Log::alert($errorMessage, ['eventMessages' => $eventMessages->toArray()]);
-
-            throw new RuntimeException($errorMessage);
-        }
-
         $previousLastId = DomainEventsCursor::first()->last_id;
 
-        if (!$this->haveAllMessagesBeenSent($previousLastId, $eventMessagesCount, $lastId)) {
-            $errorMessage = 'Not all events have been sent. Retrying...';
-            $eventMessages = $eventMessages->toArray();
+        if (!$this->isCursorConsistentWithMessages($previousLastId, $eventMessagesCount, $lastId)) {
+            $errorMessage = 'Mismatch in the events to send. Retrying...';
             Log::error(
                 $errorMessage,
                 compact('previousLastId', 'eventMessagesCount', 'lastId', 'eventMessages')
@@ -162,7 +161,7 @@ class EmitEvents extends Command
         }
     }
 
-    protected function haveAllMessagesBeenSent(int $previousLastId, int $eventMessagesCount, int $lastId): bool
+    protected function isCursorConsistentWithMessages(int $previousLastId, int $eventMessagesCount, int $lastId): bool
     {
         return $previousLastId + $eventMessagesCount === $lastId;
     }

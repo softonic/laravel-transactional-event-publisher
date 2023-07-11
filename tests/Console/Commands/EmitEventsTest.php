@@ -296,17 +296,17 @@ class EmitEventsTest extends TestCase
     /**
      * @test
      */
-    public function whenSendingABatchButTheNumberOfEventsAndTheCursorDoNotMatchItShouldLogAnErrorAndWaitAndDoNotChangeCursor(): void
+    public function whenSendingABatchButTheCursorAndTheNumberOfEventsIsNotConsistentItShouldLogAnErrorAndWaitAndDoNotChangeCursor(): void
     {
         $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         $event = DomainEvent::factory()->create();
 
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
+        $this->eventPublisherMiddleware->shouldNotReceive('store');
 
         Log::shouldReceive('error')
             ->once()
             ->with(
-                'Not all events have been sent. Retrying...',
+                'Mismatch in the events to send. Retrying...',
                 [
                     'previousLastId' => 0,
                     'eventMessagesCount' => 1,
@@ -322,7 +322,7 @@ class EmitEventsTest extends TestCase
         $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
         $emitEvents->__construct();
         $emitEvents->shouldAllowMockingProtectedMethods();
-        $emitEvents->shouldReceive('haveAllMessagesBeenSent')->once()->andReturnFalse();
+        $emitEvents->shouldReceive('isCursorConsistentWithMessages')->once()->andReturnFalse();
 
         $emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
         $emitEvents->databaseConnection = 'testing';
