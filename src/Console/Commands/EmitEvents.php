@@ -123,7 +123,7 @@ class EmitEvents extends Command
         $lastId = $events->last()->id;
         $eventMessagesCount = count($eventMessages);
 
-        $this->checkCursorConsistencyWithEvents($eventMessagesCount, $lastId, $eventMessages->toArray());
+        $this->checkCursorConsistencyWithEvents($eventMessagesCount, $lastId);
 
         if (!$this->eventPublisherMiddleware->store(...$eventMessages)) {
             $errorMessage = "The events couldn't be sent. Retrying...";
@@ -146,7 +146,7 @@ class EmitEvents extends Command
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
     }
 
-    private function checkCursorConsistencyWithEvents(int $eventMessagesCount, int $lastId, array $eventMessages): void
+    private function checkCursorConsistencyWithEvents(int $eventMessagesCount, int $lastId): void
     {
         $previousLastId = DomainEventsCursor::first()->last_id;
 
@@ -154,7 +154,7 @@ class EmitEvents extends Command
             $errorMessage = 'Mismatch in the events to send. Retrying...';
             Log::error(
                 $errorMessage,
-                compact('previousLastId', 'eventMessagesCount', 'lastId', 'eventMessages')
+                compact('previousLastId', 'eventMessagesCount', 'lastId')
             );
 
             throw new RuntimeException($errorMessage);

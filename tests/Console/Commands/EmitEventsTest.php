@@ -311,7 +311,6 @@ class EmitEventsTest extends TestCase
                     'previousLastId' => 0,
                     'eventMessagesCount' => 1,
                     'lastId' => 1,
-                    'eventMessages' => [$event['message']],
                 ]
             );
 
