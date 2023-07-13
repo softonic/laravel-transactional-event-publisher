@@ -39,7 +39,6 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
         $this->emitEvents->databaseConnection = 'testing';
         $this->emitEvents->batchSize = 2;
-        $this->emitEvents->shouldCheckConsistency = true;
     }
 
     /**
@@ -327,7 +326,6 @@ class EmitEventsTest extends TestCase
         $emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
         $emitEvents->databaseConnection = 'testing';
         $emitEvents->batchSize = 2;
-        $emitEvents->shouldCheckConsistency = true;
         $emitEvents->cursor = $cursor;
         $emitEvents->sendBatch();
 
@@ -340,12 +338,12 @@ class EmitEventsTest extends TestCase
     /**
      * @test
      */
-    public function whenSendingABatchWithTheOptionNoConsistencyCheckItShouldNotCallTheCheckCursorConsistencyWithEventsMethodAndPublishTheEvent(): void
+    public function whenSendingABatchWithTheMaxBatchSizeMessagesItShouldNotCallTheCheckCursorConsistencyWithEventsMethodAndPublishTheEvents(): void
     {
         $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory()->create();
+        DomainEvent::factory(2)->create();
 
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
+        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 2);
 
         $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
         $emitEvents->__construct();
@@ -355,12 +353,11 @@ class EmitEventsTest extends TestCase
         $emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
         $emitEvents->databaseConnection = 'testing';
         $emitEvents->batchSize = 2;
-        $emitEvents->shouldCheckConsistency = false;
         $emitEvents->cursor = $cursor;
         $emitEvents->sendBatch();
 
-        self::assertEquals(1, $emitEvents->cursor->last_id);
-        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => 1]);
+        self::assertEquals(2, $emitEvents->cursor->last_id);
+        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => 2]);
         self::assertEquals(1, $emitEvents->attemptForErrors);
         self::assertEquals(1, $emitEvents->attemptForNoEvents);
     }

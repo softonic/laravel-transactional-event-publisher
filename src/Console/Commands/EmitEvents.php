@@ -33,7 +33,6 @@ class EmitEvents extends Command
     protected $signature = 'event-sourcing:emit
         {--dbConnection=mysql : Indicate the database connection to use (MySQL unbuffered for better performance when large amount of events)}
         {--batchSize=100 : Indicate the amount of events to be sent per publish. Increase for higher throughput}
-        {--noConsistencyCheck : Option to send all the events from the beginning by resetting the cursor}
         {--allEvents : Option to send all the events from the beginning by resetting the cursor}';
 
     protected $description = 'Continuously emits domain events in batches';
@@ -45,8 +44,6 @@ class EmitEvents extends Command
     public string $databaseConnection;
 
     public int $batchSize;
-
-    public bool $shouldCheckConsistency;
 
     public int $attemptForErrors = 1;
 
@@ -60,7 +57,6 @@ class EmitEvents extends Command
 
         $this->databaseConnection = $this->option('dbConnection');
         $this->batchSize = (int)$this->option('batchSize');
-        $this->shouldCheckConsistency = !$this->option('noConsistencyCheck');
         $resetCursor = $this->option('allEvents');
 
         $this->cursor = $this->getInitialCursor($resetCursor);
@@ -127,7 +123,7 @@ class EmitEvents extends Command
         $lastId = $events->last()->id;
         $eventMessagesCount = count($eventMessages);
 
-        if ($this->shouldCheckConsistency) {
+        if ($eventMessagesCount !== $this->batchSize) {
             $this->checkCursorConsistencyWithEvents($eventMessagesCount, $lastId);
         }
 
