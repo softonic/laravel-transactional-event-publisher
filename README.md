@@ -91,9 +91,6 @@ return [
     ]
 ];
 ```
-And finally, there's another option called `--noConsistencyCheck` to avoid checking the consistency of the cursor and the amount of events sent per batch.
-The consistency check is useful to ensure that all the events are sent, but there can be no event ID missing.
-The option to disable it is useful when you know that some domain events have been deleted, for example, when you choose to compact events from the same model to reduce the number of domain events, some might disappear.
 
 ### Registering Models
 
