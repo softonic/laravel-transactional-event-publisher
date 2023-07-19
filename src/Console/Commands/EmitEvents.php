@@ -120,7 +120,7 @@ class EmitEvents extends Command
         // Transform the events to the format expected by the event publisher
         $eventMessages = $events->pluck('message');
 
-        $lastId = $events->last()->id;
+        $lastId = $events->max('id');
         $eventMessagesCount = count($eventMessages);
 
         if ($eventMessagesCount !== $this->batchSize) {
@@ -150,7 +150,7 @@ class EmitEvents extends Command
 
     protected function checkCursorConsistencyWithEvents(int $eventMessagesCount, int $lastId): void
     {
-        $previousLastId = DomainEventsCursor::first()->last_id;
+        $previousLastId = $this->cursor->last_id;
 
         if (!$this->isCursorConsistentWithMessages($previousLastId, $eventMessagesCount, $lastId)) {
             $errorMessage = 'Mismatch in the events to send. Retrying...';
