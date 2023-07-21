@@ -154,7 +154,7 @@ class EmitEvents extends Command
 
         if (!$this->isCursorConsistentWithMessages($previousLastId, $eventMessagesCount, $lastId)) {
             $errorMessage = 'Mismatch in the events to send. Retrying...';
-            Log::error(
+            Log::warning(
                 $errorMessage,
                 compact('previousLastId', 'eventMessagesCount', 'lastId')
             );

@@ -303,7 +303,7 @@ class EmitEventsTest extends TestCase
 
         $this->eventPublisherMiddleware->shouldNotReceive('store');
 
-        Log::shouldReceive('error')
+        Log::shouldReceive('warning')
             ->once()
             ->with(
                 'Mismatch in the events to send. Retrying...',
