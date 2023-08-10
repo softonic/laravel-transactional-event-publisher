@@ -25,6 +25,10 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
+        $modelMock
+            ->shouldReceive('delete')
+            ->once();
+
         $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
@@ -79,6 +83,10 @@ class ModelObserverTest extends TestCase
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
+
+        $modelMock
+            ->shouldReceive('delete')
+            ->once();
 
         $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
@@ -135,6 +143,10 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
+        $modelMock
+            ->shouldReceive('delete')
+            ->once();
+
         $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $eventStoreMiddlewareMock
             ->shouldReceive('store')
@@ -188,6 +200,10 @@ class ModelObserverTest extends TestCase
             ->shouldReceive('getConnection')
             ->times(2)
             ->andReturn($mySqlConnectorMock);
+
+        $modelMock
+            ->shouldReceive('delete')
+            ->once();
 
         $firstEventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
         $firstEventStoreMiddlewareMock

@@ -52,6 +52,9 @@ class EmitAllEvents extends Command
                         SendDomainEvents::NO_RETRIES,
                         ...$domainEvents->pluck('message')
                     )->onConnection($queueConnection);
+
+                    DomainEvent::whereIn('id', $domainEvents->pluck('id'))->delete();
+
                     $bar->advance($batchSize);
                 }
             );

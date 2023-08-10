@@ -116,6 +116,7 @@ class ModelObserver
         $message    = new $this->messageClass($model, $modelEvent);
 
         if (true === $this->executeMiddlewares($message)) {
+            $model->delete();
             $connection->commit();
         } else {
             $connection->rollBack();

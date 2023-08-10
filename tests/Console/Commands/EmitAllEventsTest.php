@@ -42,6 +42,8 @@ class EmitAllEventsTest extends TestCase
         $this->artisan('event-sourcing:emit-all')->run();
 
         self::assertCount(4, $this->dispatchedJobs);
+
+        self::assertCount(0, DomainEvent::all());
     }
 
     /**
@@ -59,5 +61,7 @@ class EmitAllEventsTest extends TestCase
         $this->artisan('event-sourcing:emit-all --batchSize=2')->run();
 
         self::assertCount(2, $this->dispatchedJobs);
+
+        self::assertCount(0, DomainEvent::all());
     }
 }
