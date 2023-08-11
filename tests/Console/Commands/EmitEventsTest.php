@@ -44,70 +44,14 @@ class EmitEventsTest extends TestCase
     /**
      * @test
      */
-    public function whenThereIsNoCursorAndEventsItShouldInitializeItAndCallTheSendBatchesMethod(): void
-    {
-        $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
-        $emitEvents->__construct();
-        $emitEvents->shouldAllowMockingProtectedMethods();
-        $emitEvents->shouldReceive('sendBatches')->once();
-        $this->app->instance(EmitEvents::class, $emitEvents);
-
-        $this->artisan('event-sourcing:emit');
-
-        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => 0]);
-    }
-
-    /**
-     * @test
-     */
-    public function whenThereIsACursorButNoEventsItShouldCallTheSendBatchesMethod(): void
-    {
-        $cursor = DomainEventsCursor::factory()->create();
-
-        $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
-        $emitEvents->__construct();
-        $emitEvents->shouldAllowMockingProtectedMethods();
-        $emitEvents->shouldReceive('sendBatches')->once();
-        $this->app->instance(EmitEvents::class, $emitEvents);
-
-        $this->artisan('event-sourcing:emit');
-
-        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => $cursor->last_id]);
-    }
-
-    /**
-     * @test
-     */
-    public function whenTheAllEventsOptionIsReceivedItShouldResetTheCursorAndCallTheSendBatchesMethod(): void
-    {
-        DomainEventsCursor::factory()->create();
-
-        $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
-        $emitEvents->__construct();
-        $emitEvents->shouldAllowMockingProtectedMethods();
-        $emitEvents->shouldReceive('sendBatches')->once();
-        $this->app->instance(EmitEvents::class, $emitEvents);
-
-        $this->artisan('event-sourcing:emit --allEvents');
-
-        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => 0]);
-    }
-
-    /**
-     * @test
-     */
     public function whenSendingABatchButThereAreNoEventsItShouldWaitAndDoNothing(): void
     {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-
         PHPMockery::mock(__NAMESPACE__, 'usleep')
             ->once()
             ->with(1000);
 
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(0);
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(2, $this->emitEvents->attemptForNoEvents);
     }
@@ -119,16 +63,12 @@ class EmitEventsTest extends TestCase
     {
         $this->emitEvents->attemptForNoEvents = 5;
 
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-
         PHPMockery::mock(__NAMESPACE__, 'usleep')
             ->once()
             ->with(16000);
 
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(0);
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(6, $this->emitEvents->attemptForNoEvents);
     }
@@ -136,141 +76,93 @@ class EmitEventsTest extends TestCase
     /**
      * @test
      */
-    public function whenSendingABatchAndThereIsOneEventItShouldPublishIt(): void
+    public function whenSendingABatchAndThereIsOneEventItShouldPublishItAndDeletedIt(): void
     {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         $event = DomainEvent::factory()->create();
 
         $this->whenEventsArePublished(fn (...$eventMessages) => $event['message']->toArray() === $eventMessages[0]->toArray());
-
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(1);
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+        self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
     }
 
     /**
      * @test
      */
-    public function whenSendingABatchAfterThreeAttemptsWithErrorsItShouldPublishItAndResetAttempts(): void
+    public function whenSendingABatchAfterThreeAttemptsWithErrorsItShouldPublishItDeleteItAndResetAttempts(): void
     {
         $this->emitEvents->attemptForErrors = 4;
 
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         $event = DomainEvent::factory()->create();
 
         $this->whenEventsArePublished(fn (...$eventMessages) => $event['message']->toArray() === $eventMessages[0]->toArray());
-
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(1);
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+        self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
     }
 
     /**
      * @test
      */
-    public function whenSendingABatchAfterFiveAttemptsWithNoEventsItShouldPublishItAndResetAttempts(): void
+    public function whenSendingABatchAfterFiveAttemptsWithNoEventsItShouldPublishItDeleteItAndResetAttempts(): void
     {
         $this->emitEvents->attemptForNoEvents = 6;
 
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         $event = DomainEvent::factory()->create();
 
         $this->whenEventsArePublished(fn (...$eventMessages) => $event['message']->toArray() === $eventMessages[0]->toArray());
-
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(1);
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+        self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
     }
 
     /**
      * @test
      */
-    public function whenSendingABatchAndThereAreSameEventsThanBatchSizeItShouldPublishThem(): void
+    public function whenSendingABatchAndThereAreSameEventsThanBatchSizeItShouldPublishThemAndDeleteThem(): void
     {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory(2)->create();
+        $events = DomainEvent::factory(2)->create();
 
         $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 2);
-
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(2);
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+        $events->each(function ($event) {
+            self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
+        });
     }
 
     /**
      * @test
      */
-    public function whenSendingABatchAndThereAreMoreEventsThanBatchSizeItShouldPublishOnlyTheBatchSizeAmount(): void
+    public function whenSendingABatchAndThereAreMoreEventsThanBatchSizeItShouldPublishAndDeleteOnlyTheBatchSizeAmount(): void
     {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory(3)->create();
+        $events = DomainEvent::factory(3)->create();
 
         $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 2);
         $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
 
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(3);
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+        $events->each(function ($event) {
+            self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
+        });
     }
 
     /**
      * @test
      */
-    public function whenSendingABatchAndThereAreMorePendingEventsThanBatchSizeAndCursorIsNotAtStartItShouldPublishOnlyTheBatchSizeAmount(): void
+    public function whenSendingABatchButThereIsAnErrorPublishingTheEventsItShouldLogAnAlertAndWaitAndDoNotDelete(): void
     {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 2]);
-        DomainEvent::factory(5)->create();
-
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 2);
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
-
-        $this->emitEvents->cursor = $cursor;
-        $this->emitEvents->sendBatch();
-
-        $this->checkFinalCursor(5);
-        self::assertEquals(1, $this->emitEvents->attemptForErrors);
-        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
-    }
-
-    /**
-     * @test
-     */
-    public function whenSendingABatchAndThereIsOnePendingEventsThanBatchSizeAndCursorIsNotAtStartItShouldPublishOnlyThatEvent(): void
-    {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 2]);
-        DomainEvent::factory(3)->create();
-
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
-
-        $this->emitEvents->cursor = $cursor;
-        $this->emitEvents->sendBatch();
-
-        $this->checkFinalCursor(3);
-        self::assertEquals(1, $this->emitEvents->attemptForErrors);
-        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
-    }
-
-    /**
-     * @test
-     */
-    public function whenSendingABatchButThereIsAnErrorPublishingTheEventsItShouldLogAnAlertAndWaitAndDoNotChangeCursor(): void
-    {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
         $event = DomainEvent::factory()->create();
 
         $this->eventPublisherMiddleware->shouldReceive('store')
@@ -285,157 +177,11 @@ class EmitEventsTest extends TestCase
             ->once()
             ->with(1);
 
-        $this->emitEvents->cursor = $cursor;
         $this->emitEvents->sendBatch();
 
-        $this->checkFinalCursor(0);
         self::assertEquals(2, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
-    }
-
-    /**
-     * @test
-     */
-    public function whenSendingABatchButTheCursorAndTheNumberOfEventsIsNotConsistentItShouldLogAnErrorAndWaitAndDoNotChangeCursor(): void
-    {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory()->create();
-
-        $this->eventPublisherMiddleware->shouldNotReceive('store');
-
-        Log::shouldReceive('warning')
-            ->once()
-            ->with(
-                'Mismatch in the events to send. Retrying...',
-                [
-                    'previousLastId' => 0,
-                    'eventMessagesCount' => 1,
-                    'lastId' => 1,
-                ]
-            );
-
-        PHPMockery::mock(__NAMESPACE__, 'sleep')
-            ->once()
-            ->with(1);
-
-        $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
-        $emitEvents->__construct();
-        $emitEvents->shouldAllowMockingProtectedMethods();
-        $emitEvents->shouldReceive('isCursorConsistentWithMessages')->once()->andReturnFalse();
-
-        $emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
-        $emitEvents->databaseConnection = 'testing';
-        $emitEvents->batchSize = 2;
-        $emitEvents->cursor = $cursor;
-        $emitEvents->sendBatch();
-
-        self::assertEquals(0, $emitEvents->cursor->last_id);
-        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => 0]);
-        self::assertEquals(2, $emitEvents->attemptForErrors);
-        self::assertEquals(1, $emitEvents->attemptForNoEvents);
-    }
-
-    /**
-     * @test
-     */
-    public function whenSendingABatchWithTheMaxBatchSizeMessagesItShouldNotCallTheCheckCursorConsistencyWithEventsMethodAndPublishTheEvents(): void
-    {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory(2)->create();
-
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 2);
-
-        $emitEvents = Mockery::mock(EmitEvents::class)->makePartial();
-        $emitEvents->__construct();
-        $emitEvents->shouldAllowMockingProtectedMethods();
-        $emitEvents->shouldNotReceive('checkCursorConsistencyWithEvents');
-
-        $emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
-        $emitEvents->databaseConnection = 'testing';
-        $emitEvents->batchSize = 2;
-        $emitEvents->cursor = $cursor;
-        $emitEvents->sendBatch();
-
-        self::assertEquals(2, $emitEvents->cursor->last_id);
-        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => 2]);
-        self::assertEquals(1, $emitEvents->attemptForErrors);
-        self::assertEquals(1, $emitEvents->attemptForNoEvents);
-    }
-
-    /**
-     * @test
-     */
-    public function whenSendingABatchAndThereIsAnErrorSavingTheCursorItShouldWaitAndRestoreTheCursor(): void
-    {
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory()->create();
-
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
-
-        DomainEventsCursor::saving(fn () => throw new Exception());
-
-        PHPMockery::mock(__NAMESPACE__, 'sleep')
-            ->once()
-            ->with(1);
-
-        $this->emitEvents->cursor = $cursor;
-        $this->emitEvents->sendBatch();
-
-        $this->checkFinalCursor(0);
-        self::assertEquals(2, $this->emitEvents->attemptForErrors);
-        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
-    }
-
-    /**
-     * @test
-     */
-    public function whenSendingABatchAndThereIsAnErrorSavingTheCursorForThirdTimeItShouldWaitAndRestoreTheCursor(): void
-    {
-        $this->emitEvents->attemptForErrors = 3;
-
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory()->create();
-
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
-
-        DomainEventsCursor::saving(fn () => throw new Exception());
-
-        PHPMockery::mock(__NAMESPACE__, 'sleep')
-            ->once()
-            ->with(4);
-
-        $this->emitEvents->cursor = $cursor;
-        $this->emitEvents->sendBatch();
-
-        $this->checkFinalCursor(0);
-        self::assertEquals(4, $this->emitEvents->attemptForErrors);
-        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
-    }
-
-    /**
-     * @test
-     */
-    public function whenSendingABatchAndThereIsAnErrorSavingTheCursorForSeventhTimeItShouldWaitTheMaxSecondsAndRestoreTheCursor(): void
-    {
-        $this->emitEvents->attemptForErrors = 7;
-
-        $cursor = DomainEventsCursor::factory()->create(['last_id' => 0]);
-        DomainEvent::factory()->create();
-
-        $this->whenEventsArePublished(fn (...$eventMessages) => count($eventMessages) === 1);
-
-        DomainEventsCursor::saving(fn () => throw new Exception());
-
-        PHPMockery::mock(__NAMESPACE__, 'sleep')
-            ->once()
-            ->with(60);
-
-        $this->emitEvents->cursor = $cursor;
-        $this->emitEvents->sendBatch();
-
-        $this->checkFinalCursor(0);
-        self::assertEquals(8, $this->emitEvents->attemptForErrors);
-        self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
+        self::assertDatabaseHas(DomainEvent::class, ['id' => $event['id']]);
     }
 
     private function whenEventsArePublished(Closure $closure): void
@@ -444,11 +190,5 @@ class EmitEventsTest extends TestCase
             ->once()
             ->withArgs($closure)
             ->andReturnTrue();
-    }
-
-    private function checkFinalCursor(int $lastId): void
-    {
-        self::assertEquals($lastId, $this->emitEvents->cursor->last_id);
-        self::assertDatabaseHas(DomainEventsCursor::class, ['last_id' => $lastId]);
     }
 }
