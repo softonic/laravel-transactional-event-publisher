@@ -109,9 +109,7 @@ class EmitEvents extends Command
         $this->eventsProcessed = true;
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
 
-        $events->each(function ($event) {
-            $event->delete();
-        });
+        $events->each->delete();
         Log::debug("Deleted {$eventMessagesCount} events, last event ID deleted: {$lastId}");
     }
 
