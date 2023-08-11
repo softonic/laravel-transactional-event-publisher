@@ -11,7 +11,6 @@ use Illuminate\Support\LazyCollection;
 use RuntimeException;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
-use Softonic\TransactionalEventPublisher\Models\DomainEventsCursor;
 
 class EmitEvents extends Command
 {
@@ -32,14 +31,11 @@ class EmitEvents extends Command
 
     protected $signature = 'event-sourcing:emit
         {--dbConnection=mysql : Indicate the database connection to use (MySQL unbuffered for better performance when large amount of events)}
-        {--batchSize=100 : Indicate the amount of events to be sent per publish. Increase for higher throughput}
-        {--allEvents : Option to send all the events from the beginning by resetting the cursor}';
+        {--batchSize=100 : Indicate the amount of events to be sent per publish. Increase for higher throughput}';
 
     protected $description = 'Continuously emits domain events in batches';
 
     public EventStoreMiddlewareContract $eventPublisherMiddleware;
-
-    public DomainEventsCursor $cursor;
 
     public string $databaseConnection;
 
@@ -57,29 +53,8 @@ class EmitEvents extends Command
 
         $this->databaseConnection = $this->option('dbConnection');
         $this->batchSize = (int)$this->option('batchSize');
-        $resetCursor = $this->option('allEvents');
-
-        $this->cursor = $this->getInitialCursor($resetCursor);
 
         $this->sendBatches();
-    }
-
-    private function getInitialCursor(bool $resetCursor): DomainEventsCursor
-    {
-        $cursor = DomainEventsCursor::first();
-
-        if (empty($cursor)) {
-            $cursor = new DomainEventsCursor(['last_id' => 0]);
-            $cursor->save();
-
-            return $cursor;
-        }
-
-        if ($resetCursor) {
-            $cursor->update(['last_id' => 0]);
-        }
-
-        return $cursor;
     }
 
     protected function sendBatches(): void
@@ -92,10 +67,9 @@ class EmitEvents extends Command
     public function sendBatch(): void
     {
         $this->eventsProcessed = false;
-        $lastId = $this->cursor->last_id;
 
         try {
-            $events = DomainEvent::on($this->databaseConnection)->where('id', '>', $lastId)->cursor();
+            $events = DomainEvent::on($this->databaseConnection)->cursor();
         } catch (Exception $e) {
             $this->waitExponentialBackOffForErrors();
 
@@ -123,10 +97,6 @@ class EmitEvents extends Command
         $lastId = $events->max('id');
         $eventMessagesCount = count($eventMessages);
 
-        if ($eventMessagesCount !== $this->batchSize) {
-            $this->checkCursorConsistencyWithEvents($eventMessagesCount, $lastId);
-        }
-
         if (!$this->eventPublisherMiddleware->store(...$eventMessages)) {
             $errorMessage = "The events couldn't be sent. Retrying...";
             Log::alert($errorMessage, ['eventMessages' => $eventMessages->toArray()]);
@@ -134,38 +104,13 @@ class EmitEvents extends Command
             throw new RuntimeException($errorMessage);
         }
 
-        try {
-            $this->cursor->update(['last_id' => $lastId]);
-        } catch (Exception $e) {
-            $this->cursor->discardChanges();
-
-            throw $e;
-        }
-
         Log::info("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
 
         $this->eventsProcessed = true;
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
-    }
 
-    protected function checkCursorConsistencyWithEvents(int $eventMessagesCount, int $lastId): void
-    {
-        $previousLastId = $this->cursor->last_id;
-
-        if (!$this->isCursorConsistentWithMessages($previousLastId, $eventMessagesCount, $lastId)) {
-            $errorMessage = 'Mismatch in the events to send. Retrying...';
-            Log::warning(
-                $errorMessage,
-                compact('previousLastId', 'eventMessagesCount', 'lastId')
-            );
-
-            throw new RuntimeException($errorMessage);
-        }
-    }
-
-    protected function isCursorConsistentWithMessages(int $previousLastId, int $eventMessagesCount, int $lastId): bool
-    {
-        return $previousLastId + $eventMessagesCount === $lastId;
+        $events->each->delete();
+        Log::debug("Deleted {$eventMessagesCount} events, last event ID deleted: {$lastId}");
     }
 
     private function waitExponentialBackOffForErrors(): void

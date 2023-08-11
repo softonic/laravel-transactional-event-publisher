@@ -65,7 +65,6 @@ You just need to create a job that will run indefinitely with the command `php a
 
 #### Sending all the events stored in database
 
-Sometimes you will need to send all the events stored in the database. To do it, you can run the previous command with the option `--allEvents`.
 You also have the option to use a [MySQL unbuffered connection](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html) with the option `--dbConnection` to retrieve a large amount of events without consuming all the memory.
 Unbuffered connection example from `config/database.php`
 ```php
