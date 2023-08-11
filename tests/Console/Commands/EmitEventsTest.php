@@ -3,7 +3,6 @@
 namespace Softonic\TransactionalEventPublisher\Console\Commands;
 
 use Closure;
-use Exception;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Log;
 use Mockery;
@@ -11,7 +10,6 @@ use phpmock\mockery\PHPMockery;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
-use Softonic\TransactionalEventPublisher\Models\DomainEventsCursor;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class EmitEventsTest extends TestCase
