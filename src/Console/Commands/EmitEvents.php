@@ -6,8 +6,10 @@ namespace Softonic\TransactionalEventPublisher\Console\Commands;
 
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
+use InvalidArgumentException;
 use RuntimeException;
 use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
@@ -30,7 +32,8 @@ class EmitEvents extends Command
     private const BASE_DELAY_FOR_NO_EVENTS = 1000;
 
     protected $signature = 'event-sourcing:emit
-        {--dbConnection=mysql : Indicate the database connection to use (MySQL unbuffered for better performance when large amount of events)}
+        {--dbConnection=mysql : Indicate the database connection to use }
+        {--dbConnectionUnbuffered=mysql-unbuffered : Indicate the unbuffered database connection to use (MySQL unbuffered for better performance when large amount of events)}
         {--batchSize=100 : Indicate the amount of events to be sent per publish. Increase for higher throughput}';
 
     protected $description = 'Continuously emits domain events in batches';
@@ -38,6 +41,8 @@ class EmitEvents extends Command
     public EventStoreMiddlewareContract $eventPublisherMiddleware;
 
     public string $databaseConnection;
+
+    public string $databaseUnbufferedConnection;
 
     public int $batchSize;
 
@@ -52,6 +57,7 @@ class EmitEvents extends Command
         $this->eventPublisherMiddleware = $eventPublisherMiddleware;
 
         $this->databaseConnection = $this->option('dbConnection');
+        $this->databaseUnbufferedConnection = $this->option('dbConnectionUnbuffered');
         $this->batchSize = (int)$this->option('batchSize');
 
         $this->sendBatches();
@@ -69,7 +75,12 @@ class EmitEvents extends Command
         $this->eventsProcessed = false;
 
         try {
-            $events = DomainEvent::on($this->databaseConnection)->cursor();
+            $events = DomainEvent::on($this->databaseUnbufferedConnection)->cursor();
+        } catch (InvalidArgumentException $e) {
+            Log::alert("Database error: {$e->getMessage()}");
+
+            exit(1);
+
         } catch (Exception $e) {
             $this->waitExponentialBackOffForErrors();
 
@@ -78,6 +89,11 @@ class EmitEvents extends Command
 
         try {
             $events->chunk($this->batchSize)->each($this->sendEvents(...));
+        } catch (QueryException $e) {
+            Log::alert("Database error: {$e->getMessage()}");
+
+            exit(1);
+
         } catch (Exception $e) {
             $this->waitExponentialBackOffForErrors();
 
@@ -109,7 +125,7 @@ class EmitEvents extends Command
         $this->eventsProcessed = true;
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
 
-        $events->each->delete();
+        DomainEvent::on($this->databaseConnection)->whereIn('id', $events->pluck('id'))->delete();
         Log::debug("Deleted {$eventMessagesCount} events, last event ID deleted: {$lastId}");
     }
 
