@@ -36,6 +36,7 @@ class EmitEventsTest extends TestCase
         $this->emitEvents = new EmitEvents();
         $this->emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;
         $this->emitEvents->databaseConnection = 'testing';
+        $this->emitEvents->databaseUnbufferedConnection = 'testing';
         $this->emitEvents->batchSize = 2;
     }
 
