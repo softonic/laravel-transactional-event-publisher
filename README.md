@@ -65,7 +65,10 @@ You just need to create a job that will run indefinitely with the command `php a
 
 #### Sending all the events stored in database
 
-You also have the option to use a [MySQL unbuffered connection](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html) with the option `--dbConnection` to retrieve a large amount of events without consuming all the memory.
+By default, the command `php artisan event-sourcing:emit` will send all the events stored in database using a [MySQL unbuffered connection](https://dev.mysql.com/doc/apis-php/en/apis-php-mysqlinfo.concepts.buffering.html).
+Otherwise, a Mysql buffered Connection it is used to delete the events from database after they have been sent.
+
+You can specify the connection to use with the option `--dbConnection` for the buffered connection and `--dbConnectionUnbuffered` for the unbuffered connection.
 Unbuffered connection example from `config/database.php`
 ```php
 return [
