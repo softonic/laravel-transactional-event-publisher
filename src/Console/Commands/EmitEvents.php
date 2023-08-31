@@ -40,9 +40,9 @@ class EmitEvents extends Command
 
     public EventStoreMiddlewareContract $eventPublisherMiddleware;
 
-    public string $databaseConnection;
+    public string $dbConnection;
 
-    public string $databaseUnbufferedConnection;
+    public string $dbConnectionUnbuffered;
 
     public int $batchSize;
 
@@ -56,8 +56,8 @@ class EmitEvents extends Command
     {
         $this->eventPublisherMiddleware = $eventPublisherMiddleware;
 
-        $this->databaseConnection = $this->option('dbConnection');
-        $this->databaseUnbufferedConnection = $this->option('dbConnectionUnbuffered');
+        $this->dbConnection = $this->option('dbConnection');
+        $this->dbConnectionUnbuffered = $this->option('dbConnectionUnbuffered');
         $this->batchSize = (int)$this->option('batchSize');
 
         $this->sendBatches();
@@ -75,7 +75,7 @@ class EmitEvents extends Command
         $this->eventsProcessed = false;
 
         try {
-            $events = DomainEvent::on($this->databaseUnbufferedConnection)->cursor();
+            $events = DomainEvent::on($this->dbConnectionUnbuffered)->cursor();
         } catch (InvalidArgumentException $e) {
             Log::alert("Database error: {$e->getMessage()}");
 
@@ -125,7 +125,7 @@ class EmitEvents extends Command
         $this->eventsProcessed = true;
         $this->attemptForErrors = $this->attemptForNoEvents = 1;
 
-        DomainEvent::on($this->databaseConnection)->whereIn('id', $events->pluck('id'))->delete();
+        DomainEvent::on($this->dbConnection)->whereIn('id', $events->pluck('id'))->delete();
         Log::debug("Deleted {$eventMessagesCount} events, last event ID deleted: {$lastId}");
     }
 
