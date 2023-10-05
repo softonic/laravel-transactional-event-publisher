@@ -5,8 +5,10 @@ namespace Softonic\TransactionalEventPublisher\Observers;
 use Illuminate\Database\Connectors\MySqlConnector;
 use Illuminate\Database\Eloquent\Model;
 use Mockery;
-use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
+use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class ModelObserverTest extends TestCase
@@ -16,8 +18,6 @@ class ModelObserverTest extends TestCase
      */
     public function whenANewItemIsCreatedShouldStoreTheEventMessage()
     {
-        $eventStoreResult = true;
-
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
@@ -28,13 +28,11 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $eventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
+        $builderMock = $this->getBuilderMock($modelMock, $eventMessage, 'created');
+        $eventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, true);
 
-        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, EventMessageStub::class);
+        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, $builderMock);
 
         $modelObserver->creating($modelMock);
 
@@ -48,8 +46,6 @@ class ModelObserverTest extends TestCase
     {
         $this->expectException(EventStoreFailedException::class);
 
-        $eventStoreResult = false;
-
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
@@ -60,13 +56,12 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $eventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
 
-        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, EventMessageStub::class);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
+        $builderMock = $this->getBuilderMock($modelMock, $eventMessage, 'created');
+        $eventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, false);
+
+        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, $builderMock);
 
         $modelObserver->creating($modelMock);
         $modelObserver->created($modelMock);
@@ -77,8 +72,6 @@ class ModelObserverTest extends TestCase
      */
     public function whenAnItemIsUpdatedShouldStoreTheEventMessage()
     {
-        $eventStoreResult = true;
-
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
@@ -89,13 +82,11 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $eventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
+        $builderMock = $this->getBuilderMock($modelMock, $eventMessage, 'updated');
+        $eventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, true);
 
-        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, EventMessageStub::class);
+        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, $builderMock);
 
         $modelObserver->updating($modelMock);
 
@@ -109,8 +100,6 @@ class ModelObserverTest extends TestCase
     {
         $this->expectException(EventStoreFailedException::class);
 
-        $eventStoreResult = false;
-
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('rollBack')->once();
@@ -121,13 +110,11 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $eventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
+        $builderMock = $this->getBuilderMock($modelMock, $eventMessage, 'updated');
+        $eventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, false);
 
-        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, EventMessageStub::class);
+        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, $builderMock);
 
         $modelObserver->updating($modelMock);
         $modelObserver->updated($modelMock);
@@ -138,8 +125,6 @@ class ModelObserverTest extends TestCase
      */
     public function whenAnItemDeletedShouldStoreTheEventMessage()
     {
-        $eventStoreResult = true;
-
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
@@ -150,13 +135,11 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $eventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
+        $builderMock = $this->getBuilderMock($modelMock, $eventMessage, 'deleted');
+        $eventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, true);
 
-        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, EventMessageStub::class);
+        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, $builderMock);
 
         $modelObserver->deleting($modelMock);
 
@@ -169,7 +152,6 @@ class ModelObserverTest extends TestCase
     public function whenAnItemIsDeletedButTheEventStoreFailsWhenStoring()
     {
         $this->expectException(EventStoreFailedException::class);
-        $eventStoreResult = false;
 
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
@@ -181,13 +163,11 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $eventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
+        $builderMock = $this->getBuilderMock($modelMock, $eventMessage, 'deleted');
+        $eventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, false);
 
-        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, EventMessageStub::class);
+        $modelObserver = new ModelObserver($eventStoreMiddlewareMock, $builderMock);
 
         $modelObserver->deleting($modelMock);
         $modelObserver->deleted($modelMock);
@@ -198,8 +178,6 @@ class ModelObserverTest extends TestCase
      */
     public function whenItemIsCreatedWithMultipleMiddlewaresShouldStoreTheEventMessagesInAllTheMiddlewares()
     {
-        $eventStoreResult = true;
-
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
         $mySqlConnectorMock->shouldReceive('commit')->once();
@@ -210,28 +188,50 @@ class ModelObserverTest extends TestCase
             ->times(2)
             ->andReturn($mySqlConnectorMock);
 
-        $firstEventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $firstEventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
-
-        $secondEventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareContract::class);
-        $secondEventStoreMiddlewareMock
-            ->shouldReceive('store')
-            ->once()
-            ->andReturn($eventStoreResult);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
+        $builderMock = $this->getBuilderMock($modelMock, $eventMessage, 'created');
+        $firstEventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, true);
+        $secondEventStoreMiddlewareMock = $this->whenEventMessageIsStored($eventMessage, true);
 
         $modelObserver = new ModelObserver(
             [
                 $firstEventStoreMiddlewareMock,
                 $secondEventStoreMiddlewareMock,
             ],
-            EventMessageStub::class
+            $builderMock
         );
 
         $modelObserver->creating($modelMock);
 
         self::assertTrue($modelObserver->created($modelMock));
+    }
+
+    private function getBuilderMock(
+        Model $modelMock,
+        EventMessageInterface $eventMessage,
+        string $eventType
+    ): EventMessageBuilderInterface {
+        $builderMock = Mockery::mock(EventMessageBuilderInterface::class);
+        $builderMock
+            ->shouldReceive('build')
+            ->once()
+            ->with($modelMock, $eventType)
+            ->andReturn($eventMessage);
+
+        return $builderMock;
+    }
+
+    private function whenEventMessageIsStored(
+        EventMessageInterface $eventMessage,
+        bool $result
+    ): EventStoreMiddlewareInterface {
+        $eventStoreMiddlewareMock = Mockery::mock(EventStoreMiddlewareInterface::class);
+        $eventStoreMiddlewareMock
+            ->shouldReceive('store')
+            ->once()
+            ->with($eventMessage)
+            ->andReturn($result);
+
+        return $eventStoreMiddlewareMock;
     }
 }

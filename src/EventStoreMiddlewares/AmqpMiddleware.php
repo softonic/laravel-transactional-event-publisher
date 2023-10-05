@@ -5,11 +5,11 @@ namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Softonic\Amqp\Amqp;
-use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
-use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
+use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 
-class AmqpMiddleware implements EventStoreMiddlewareContract
+class AmqpMiddleware implements EventStoreMiddlewareInterface
 {
     public function __construct(
         private readonly AmqpMessageFactory $messageFactory,
@@ -21,7 +21,7 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
     /**
      * Publishes the messages to the AMQP Message broker.
      */
-    public function store(EventMessageContract ...$messages): bool
+    public function store(EventMessageInterface ...$messages): bool
     {
         try {
             if (count($messages) === 1) {
@@ -55,7 +55,7 @@ class AmqpMiddleware implements EventStoreMiddlewareContract
      * Returns the message routing key based in the configured parameters
      * or a default value based in service, eventType and modelName.
      */
-    private function getRoutingKey(EventMessageContract $message): string
+    private function getRoutingKey(EventMessageInterface $message): string
     {
         $routingKey = $message->service . '.' . $message->eventType . '.' . $message->modelName;
         if (isset($this->properties['routing_key_fields'])) {

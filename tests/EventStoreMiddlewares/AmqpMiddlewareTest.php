@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Log;
 use Mockery;
 use PhpAmqpLib\Message\AMQPMessage;
 use Softonic\Amqp\Amqp;
-use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class AmqpMiddlewareTest extends TestCase
@@ -41,9 +41,9 @@ class AmqpMiddlewareTest extends TestCase
         self::assertFalse($amqpMiddleware->store($message));
     }
 
-    private function getOneMessage(): EventMessageContract
+    private function getOneMessage(): EventMessageInterface
     {
-        $message            = Mockery::mock(EventMessageContract::class);
+        $message            = Mockery::mock(EventMessageInterface::class);
         $message->site      = 'softonic';
         $message->service   = 'service';
         $message->eventType = 'created';
@@ -89,7 +89,7 @@ class AmqpMiddlewareTest extends TestCase
 
     private function getTwoMessages(): array
     {
-        $message            = Mockery::mock(EventMessageContract::class);
+        $message            = Mockery::mock(EventMessageInterface::class);
         $message->site      = 'softonic';
         $message->service   = 'service';
         $message->eventType = 'updated';

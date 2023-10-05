@@ -2,54 +2,33 @@
 
 namespace Softonic\TransactionalEventPublisher\ValueObjects;
 
-use Illuminate\Database\Eloquent\Model;
-use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
-class EventMessage implements EventMessageContract
+class EventMessage implements EventMessageInterface
 {
-    public $service;
-
-    public $eventType;
-
-    public $modelName;
-
-    public $eventName;
-
-    public $createdAt;
-
-    public $payload;
-
-    public function __construct(Model $model, $eventType)
-    {
-        $this->service   = config('transactional-event-publisher.service');
-        $this->eventType = $eventType;
-        $this->modelName = class_basename($model);
-        $this->eventName = $this->buildEventName($this->modelName, $eventType);
-        $this->payload   = $model->toArray();
-        $this->createdAt = date('Y-m-d H:i:s');
+    public function __construct(
+        public readonly string $service,
+        public readonly string $eventType,
+        public readonly string $modelName,
+        public readonly string $eventName,
+        public readonly array $payload,
+        public readonly string $createdAt,
+    ) {
     }
 
     public function toArray(): array
     {
         return [
             'service'   => $this->service,
+            'eventType' => $this->eventType,
+            'modelName' => $this->modelName,
             'eventName' => $this->eventName,
-            'createdAt' => $this->createdAt,
             'payload'   => $this->payload,
+            'createdAt' => $this->createdAt,
         ];
     }
 
-    private function buildEventName($modelName, $event)
-    {
-        return $modelName . ucfirst($event);
-    }
-
-    public function __toString(): string
-    {
-        return serialize($this->toArray());
-    }
-
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return $this->toArray();
     }

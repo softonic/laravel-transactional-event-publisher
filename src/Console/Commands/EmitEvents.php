@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 use InvalidArgumentException;
 use RuntimeException;
-use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
+use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 
 class EmitEvents extends Command
@@ -38,7 +38,7 @@ class EmitEvents extends Command
 
     protected $description = 'Continuously emits domain events in batches';
 
-    public EventStoreMiddlewareContract $eventPublisherMiddleware;
+    public EventStoreMiddlewareInterface $eventPublisherMiddleware;
 
     public string $dbConnection;
 
@@ -52,7 +52,7 @@ class EmitEvents extends Command
 
     private bool $eventsProcessed;
 
-    public function handle(EventStoreMiddlewareContract $eventPublisherMiddleware): void
+    public function handle(EventStoreMiddlewareInterface $eventPublisherMiddleware): void
     {
         $this->eventPublisherMiddleware = $eventPublisherMiddleware;
 
