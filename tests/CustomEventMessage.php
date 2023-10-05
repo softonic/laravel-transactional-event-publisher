@@ -2,7 +2,6 @@
 
 namespace Softonic\TransactionalEventPublisher;
 
-use Illuminate\Database\Eloquent\Model;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
 class CustomEventMessage implements EventMessageInterface

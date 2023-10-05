@@ -4,9 +4,9 @@ namespace Softonic\TransactionalEventPublisher\Builders;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
+use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class EventMessageBuilder implements EventMessageBuilderInterface
 {
