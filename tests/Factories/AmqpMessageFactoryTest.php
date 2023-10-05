@@ -6,8 +6,8 @@ use LogicException;
 use Mockery;
 use PhpAmqpLib\Message\AMQPMessage;
 use phpmock\mockery\PHPMockery;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\TestCase;
-use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class AmqpMessageFactoryTest extends TestCase
 {
@@ -21,7 +21,7 @@ class AmqpMessageFactoryTest extends TestCase
 
         $factory = new AmqpMessageFactory();
 
-        $eventMessageMock = Mockery::mock(EventMessage::class);
+        $eventMessageMock = Mockery::mock(EventMessageInterface::class);
         $eventMessageMock->shouldReceive('toArray')->once()->andReturn([]);
 
         $factory->make($eventMessageMock);
@@ -33,7 +33,7 @@ class AmqpMessageFactoryTest extends TestCase
     public function whenRoutingKeyProvidedAndMessageShouldCreateAnAMQPMessageObject()
     {
         $factory      = new AmqpMessageFactory();
-        $eventMessage = Mockery::mock(EventMessage::class);
+        $eventMessage = Mockery::mock(EventMessageInterface::class);
         $eventMessage
             ->shouldReceive('toArray')
             ->andReturn(['service' => 'service', 'eventName' => 'created']);

@@ -4,16 +4,16 @@ namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
-use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
+use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 
-class DatabaseMiddleware implements EventStoreMiddlewareContract
+class DatabaseMiddleware implements EventStoreMiddlewareInterface
 {
     /**
      * Stores the messages in database.
      */
-    public function store(EventMessageContract ...$messages): bool
+    public function store(EventMessageInterface ...$messages): bool
     {
         try {
             $inserts = [];

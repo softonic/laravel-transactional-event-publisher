@@ -7,8 +7,8 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 use phpmock\mockery\PHPMockery;
-use Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
+use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 use Softonic\TransactionalEventPublisher\TestCase;
 
@@ -16,7 +16,7 @@ class EmitEventsTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private readonly EventStoreMiddlewareContract $eventPublisherMiddleware;
+    private readonly EventStoreMiddlewareInterface $eventPublisherMiddleware;
 
     private readonly EmitEvents $emitEvents;
 
@@ -30,8 +30,8 @@ class EmitEventsTest extends TestCase
 
         config()->set('transactional-event-publisher.event_publisher_middleware', AmqpMiddleware::class);
 
-        $this->eventPublisherMiddleware = Mockery::mock(EventStoreMiddlewareContract::class);
-        $this->app->instance(EventStoreMiddlewareContract::class, $this->eventPublisherMiddleware);
+        $this->eventPublisherMiddleware = Mockery::mock(EventStoreMiddlewareInterface::class);
+        $this->app->instance(EventStoreMiddlewareInterface::class, $this->eventPublisherMiddleware);
 
         $this->emitEvents = new EmitEvents();
         $this->emitEvents->eventPublisherMiddleware = $this->eventPublisherMiddleware;

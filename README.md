@@ -121,12 +121,14 @@ class EventServiceProvider extends ServiceProvider
 
 ### Custom middlewares
 
-The middlewares should implement the `Softonic\TransactionalEventPublisher\Contracts\EventStoreMiddlewareContract` interface.
+The middlewares should implement the `Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface` interface.
 Its purpose is to store the domain event provided, so you can implement any storage for domain events.
 
 ### Custom messages
 
-The `transactional-event.message` class must implement `EventMessageContract` and `transactional-event.middleware` class must implement `EventStoreMiddlewareContract`.
+The `transactional-event.messageBuilder` class must implement `EventMessageBuilderInterface` and `transactional-event.middleware` class must implement `EventStoreMiddlewareInterface`.
+
+The builder should return a `EventMessageInterface` entity. It just needs to implement the `toArray` and `jsonSerialize` methods with all the attributes that you need.
 
 Considerations
 ==============

@@ -8,7 +8,7 @@ debug:
 
 .PHONY: update-dependencies
 update-dependencies:
-	docker-compose run composer update
+	docker-compose run composer update --ignore-platform-req=ext-sockets
 
 .PHONY: checkstyle
 checkstyle:

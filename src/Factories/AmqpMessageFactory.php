@@ -4,14 +4,14 @@ namespace Softonic\TransactionalEventPublisher\Factories;
 
 use LogicException;
 use PhpAmqpLib\Message\AMQPMessage;
-use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
 class AmqpMessageFactory
 {
     /**
      * Makes a AMQPMessage object.
      */
-    public function make(EventMessageContract $eventMessage, array $properties = []): AMQPMessage
+    public function make(EventMessageInterface $eventMessage, array $properties = []): AMQPMessage
     {
         $this->checkMessage($eventMessage->toArray());
 

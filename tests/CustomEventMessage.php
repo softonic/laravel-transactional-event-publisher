@@ -3,9 +3,9 @@
 namespace Softonic\TransactionalEventPublisher;
 
 use Illuminate\Database\Eloquent\Model;
-use Softonic\TransactionalEventPublisher\Contracts\EventMessageContract;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
-class CustomEventMessage implements EventMessageContract
+class CustomEventMessage implements EventMessageInterface
 {
     public function __construct(Model $model, $eventType)
     {

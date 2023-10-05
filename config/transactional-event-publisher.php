@@ -1,8 +1,9 @@
 <?php
 
+use Softonic\TransactionalEventPublisher\Builders\EventMessageBuilder;
+use Softonic\TransactionalEventPublisher\Entities\EventMessage;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware;
-use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 return [
     /*
@@ -28,10 +29,10 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Event Message class.
+    | Event Message Builder class.
     |--------------------------------------------------------------------------
     */
-    'message' => EventMessage::class,
+    'messageBuilder' => EventMessageBuilder::class,
 
     /*
     |--------------------------------------------------------------------------
