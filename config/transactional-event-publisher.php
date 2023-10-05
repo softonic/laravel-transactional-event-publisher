@@ -1,7 +1,7 @@
 <?php
 
 use Softonic\TransactionalEventPublisher\Builders\EventMessageBuilder;
-use Softonic\TransactionalEventPublisher\Entities\EventMessage;
+use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\DatabaseMiddleware;
 

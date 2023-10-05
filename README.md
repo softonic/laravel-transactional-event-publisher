@@ -128,7 +128,7 @@ Its purpose is to store the domain event provided, so you can implement any stor
 
 The `transactional-event.messageBuilder` class must implement `EventMessageBuilderInterface` and `transactional-event.middleware` class must implement `EventStoreMiddlewareInterface`.
 
-The builder should return a `EventMessageInterface` entity. It just needs to implement the `toArray` and `jsonSerialize` methods with all the attributes that you need.
+The builder should return a `EventMessageInterface` value object. It just needs to implement the `toArray` and `jsonSerialize` methods with all the attributes that you need.
 
 Considerations
 ==============

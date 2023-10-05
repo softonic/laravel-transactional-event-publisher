@@ -1,6 +1,6 @@
 <?php
 
-namespace Softonic\TransactionalEventPublisher\Entities;
+namespace Softonic\TransactionalEventPublisher\ValueObjects;
 
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
