@@ -68,7 +68,7 @@ class ServiceProvider extends LaravelServiceProvider
 
             return new ModelObserver(
                 $middlewares,
-                new (config('transactional-event-publisher.messageBuilder'))
+                resolve(config('transactional-event-publisher.messageBuilder'))
             );
         });
 
