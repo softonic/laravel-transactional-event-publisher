@@ -20,7 +20,7 @@ class EventMessageBuilder implements EventMessageBuilderInterface
             eventType: $eventType,
             modelName: $modelName,
             eventName: $modelName . ucfirst($eventType),
-            payload: $model->toArray(),
+            payload: $model->attributesToArray(),
             createdAt: Carbon::now()->toDateTimeString(),
         );
     }
