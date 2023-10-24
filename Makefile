@@ -1,3 +1,7 @@
+.PHONY: phpunit
+phpunit:
+	docker-compose run composer run phpunit
+
 .PHONY: tests
 tests:
 	docker-compose run composer run test
