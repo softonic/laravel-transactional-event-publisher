@@ -49,8 +49,8 @@ class ServiceProvider extends LaravelServiceProvider
 
         $this->app->bind(AmqpMiddleware::class, function () {
             return new AmqpMiddleware(
-                new AmqpMessageFactory(),
-                new Amqp(),
+                resolve(AmqpMessageFactory::class),
+                resolve(Amqp::class),
                 config('transactional-event-publisher.properties.amqp')
             );
         });
