@@ -21,7 +21,7 @@ class AmqpMessageFactory
         );
     }
 
-    private function checkMessage(array $message): void
+    protected function checkMessage(array $message): void
     {
         if (empty(array_filter($message))) {
             throw new LogicException('No message provided');
