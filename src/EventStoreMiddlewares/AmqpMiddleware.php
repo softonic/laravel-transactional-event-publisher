@@ -25,16 +25,22 @@ class AmqpMiddleware implements EventStoreMiddlewareInterface
     {
         try {
             if (count($messages) === 1) {
-                $messageFactory = $this->messageFactory->make($messages[0]);
                 $routing = $this->getRoutingKey($messages[0]);
-                $this->channel->basic_publish($messageFactory, $this->properties['exchange'], $routing);
+                $this->channel->basic_publish(
+                    $this->messageFactory->make($messages[0]),
+                    $this->properties['exchange'],
+                    $routing
+                );
                 return true;
             }
 
             foreach ($messages as $message) {
-                $messageFactory = $this->messageFactory->make($message);
                 $routing = $this->getRoutingKey($message);
-                $this->channel->batch_basic_publish($messageFactory, $this->properties['exchange'], $routing);
+                $this->channel->batch_basic_publish(
+                    $this->messageFactory->make($message),
+                    $this->properties['exchange'],
+                    $routing
+                );
             }
 
             $this->channel->publish_batch();
