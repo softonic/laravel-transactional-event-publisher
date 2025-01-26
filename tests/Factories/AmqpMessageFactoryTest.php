@@ -6,15 +6,14 @@ use LogicException;
 use Mockery;
 use PhpAmqpLib\Message\AMQPMessage;
 use phpmock\mockery\PHPMockery;
+use PHPUnit\Framework\Attributes\Test;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class AmqpMessageFactoryTest extends TestCase
 {
-    /**
-     * @test
-     */
-    public function whenNoMessageShouldThrowALogicException()
+    #[Test]
+    public function whenNoMessageShouldThrowALogicException(): void
     {
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('No message provided');
@@ -27,10 +26,8 @@ class AmqpMessageFactoryTest extends TestCase
         $factory->make($eventMessageMock);
     }
 
-    /**
-     * @test
-     */
-    public function whenRoutingKeyProvidedAndMessageShouldCreateAnAMQPMessageObject()
+    #[Test]
+    public function whenRoutingKeyProvidedAndMessageShouldCreateAnAMQPMessageObject(): void
     {
         $factory      = new AmqpMessageFactory();
         $eventMessage = Mockery::mock(EventMessageInterface::class);

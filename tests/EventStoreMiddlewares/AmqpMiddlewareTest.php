@@ -2,24 +2,24 @@
 
 namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Mockery;
+use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
-use Softonic\Amqp\Amqp;
+use PHPUnit\Framework\Attributes\Test;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class AmqpMiddlewareTest extends TestCase
 {
-    /**
-     * @test
-     */
-    public function whenStoringAMessageThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
+    #[Test]
+    public function whenStoringAMessageThrowAnExceptionAmqpMiddlewareShouldReturnFalse(): void
     {
         $message     = $this->getOneMessage();
         $amqpMessage = new AMQPMessage();
-        $properties  = ['AMQP properties'];
+        $properties  = ['exchange' => 'exchange'];
 
         Log::shouldReceive('error')
             ->once();
@@ -30,13 +30,13 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpMock = Mockery::mock(Amqp::class);
-        $amqpMock
-            ->shouldReceive('publish')
+        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock
+            ->shouldReceive('basic_publish')
             ->once()
-            ->andThrow('\Exception');
+            ->andThrow(Exception::class);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpChannelMock, $properties);
 
         self::assertFalse($amqpMiddleware->store($message));
     }
@@ -54,15 +54,13 @@ class AmqpMiddlewareTest extends TestCase
         return $message;
     }
 
-    /**
-     * @test
-     */
-    public function whenStoringMultipleMessagesThrowAnExceptionAmqpMiddlewareShouldReturnFalse()
+    #[Test]
+    public function whenStoringMultipleMessagesThrowAnExceptionAmqpMiddlewareShouldReturnFalse(): void
     {
         $messages = $this->getTwoMessages();
 
         $amqpMessage = new AMQPMessage();
-        $properties  = ['AMQP properties'];
+        $properties  = ['exchange' => 'exchange'];
 
         Log::shouldReceive('error')
             ->once();
@@ -73,16 +71,16 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($amqpMessage);
 
-        $amqpMock = Mockery::mock(Amqp::class);
-        $amqpMock
-            ->shouldReceive('batchBasicPublish')
+        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock
+            ->shouldReceive('batch_basic_publish')
             ->twice();
-        $amqpMock
-            ->shouldReceive('batchPublish')
+        $amqpChannelMock
+            ->shouldReceive('publish_batch')
             ->once()
-            ->andThrow('\Exception');
+            ->andThrow(Exception::class);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpChannelMock, $properties);
 
         self::assertFalse($amqpMiddleware->store(...$messages));
     }
@@ -103,20 +101,12 @@ class AmqpMiddlewareTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
-    public function whenStoringAMessageShouldReturnTrue()
+    #[Test]
+    public function whenStoringAMessageShouldReturnTrue(): void
     {
         $message     = $this->getOneMessage();
-        $properties  = ['AMQP properties'];
+        $properties  = ['exchange' => 'exchange'];
         $amqpMessage = new AMQPMessage();
-
-        $amqpMock = Mockery::mock(Amqp::class);
-        $amqpMock
-            ->shouldReceive('publish')
-            ->once()
-            ->with('service.created.model', $amqpMessage, $properties);
 
         $amqpMessageFactory = Mockery::mock(AmqpMessageFactory::class);
         $amqpMessageFactory
@@ -124,34 +114,24 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock
+            ->shouldReceive('basic_publish')
+            ->once()
+            ->with($amqpMessage, $properties['exchange'], 'service.created.model');
+
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpChannelMock, $properties);
 
         self::assertTrue($amqpMiddleware->store($message));
     }
 
-    /**
-     * @test
-     */
-    public function whenStoringMultipleMessagesShouldReturnTrue()
+    #[Test]
+    public function whenStoringMultipleMessagesShouldReturnTrue(): void
     {
         $messages          = $this->getTwoMessages();
-        $properties        = ['AMQP properties'];
+        $properties        = ['exchange' => 'exchange'];
         $firstAmqpMessage  = new AMQPMessage();
         $secondAmqpMessage = new AMQPMessage();
-
-        $amqpMock = Mockery::mock(Amqp::class);
-        $amqpMock
-            ->shouldReceive('batchBasicPublish')
-            ->once()
-            ->with('service.created.model', $firstAmqpMessage);
-        $amqpMock
-            ->shouldReceive('batchBasicPublish')
-            ->once()
-            ->with('service.updated.model', $secondAmqpMessage);
-        $amqpMock
-            ->shouldReceive('batchPublish')
-            ->once()
-            ->with($properties);
 
         $amqpMessageFactory = Mockery::mock(AmqpMessageFactory::class);
         $amqpMessageFactory
@@ -159,15 +139,29 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock
+            ->shouldReceive('batch_basic_publish')
+            ->once()
+            ->with($firstAmqpMessage, $properties['exchange'], 'service.created.model');
+        $amqpChannelMock
+            ->shouldReceive('batch_basic_publish')
+            ->once()
+            ->with($secondAmqpMessage, $properties['exchange'], 'service.updated.model');
+        $amqpChannelMock
+            ->shouldReceive('publish_batch')
+            ->once();
+
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpChannelMock, $properties);
 
         self::assertTrue($amqpMiddleware->store(...$messages));
     }
 
-    public function testConfigurableRoutingKey()
+    public function testConfigurableRoutingKey(): void
     {
         $message            = $this->getOneMessage();
         $properties         = [
+            'exchange'          => 'exchange',
             'routing_key_fields' => ['site', 'service', 'eventType', 'modelName'],
         ];
         $message->site      = 'softonic';
@@ -176,45 +170,32 @@ class AmqpMiddlewareTest extends TestCase
         $message->modelName = 'Model';
         $amqpMessage        = new AMQPMessage();
 
-        $amqpMock = Mockery::mock(Amqp::class);
-        $amqpMock
-            ->shouldReceive('publish')
-            ->once()
-            ->with('softonic.service.created.model', $amqpMessage, $properties);
-
         $amqpMessageFactory = Mockery::mock(AmqpMessageFactory::class);
         $amqpMessageFactory
             ->shouldReceive('make')
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock
+            ->shouldReceive('basic_publish')
+            ->once()
+            ->with($amqpMessage, $properties['exchange'], 'softonic.service.created.model');
+
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpChannelMock, $properties);
 
         self::assertTrue($amqpMiddleware->store($message));
     }
 
-    public function testConfigurableRoutingKeyForMultipleMessages()
+    public function testConfigurableRoutingKeyForMultipleMessages(): void
     {
         $messages          = $this->getTwoMessages();
         $properties        = [
+            'exchange'          => 'exchange',
             'routing_key_fields' => ['site', 'service', 'eventType', 'modelName'],
         ];
         $firstAmqpMessage  = new AMQPMessage();
         $secondAmqpMessage = new AMQPMessage();
-
-        $amqpMock = Mockery::mock(Amqp::class);
-        $amqpMock
-            ->shouldReceive('batchBasicPublish')
-            ->once()
-            ->with('softonic.service.created.model', $firstAmqpMessage);
-        $amqpMock
-            ->shouldReceive('batchBasicPublish')
-            ->once()
-            ->with('softonic.service.updated.model', $secondAmqpMessage);
-        $amqpMock
-            ->shouldReceive('batchPublish')
-            ->once()
-            ->with($properties);
 
         $amqpMessageFactory = Mockery::mock(AmqpMessageFactory::class);
         $amqpMessageFactory
@@ -222,7 +203,21 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
-        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpMock, $properties);
+        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock
+            ->shouldReceive('batch_basic_publish')
+            ->once()
+            ->with($firstAmqpMessage, $properties['exchange'], 'softonic.service.created.model');
+        $amqpChannelMock
+            ->shouldReceive('batch_basic_publish')
+            ->once()
+            ->with($secondAmqpMessage, $properties['exchange'], 'softonic.service.updated.model');
+        $amqpChannelMock
+            ->shouldReceive('publish_batch')
+            ->once();
+
+
+        $amqpMiddleware = new AmqpMiddleware($amqpMessageFactory, $amqpChannelMock, $properties);
 
         self::assertTrue($amqpMiddleware->store(...$messages));
     }

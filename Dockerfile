@@ -1,3 +1,4 @@
-FROM composer:2.0
+FROM composer:2.2
 
-RUN docker-php-ext-install sockets
+RUN apk add --no-cache linux-headers musl-dev \
+    && docker-php-ext-install sockets bcmath

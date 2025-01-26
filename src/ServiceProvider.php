@@ -3,11 +3,12 @@
 namespace Softonic\TransactionalEventPublisher;
 
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
-use Softonic\Amqp\Amqp;
+use Override;
 use Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
+use Softonic\TransactionalEventPublisher\Services\Amqp;
 
 /**
  * Class ServiceProvider
@@ -22,7 +23,7 @@ class ServiceProvider extends LaravelServiceProvider
      * Bootstrap the application services.
      *
      */
-    public function boot()
+    public function boot(): void
     {
         $this->publishes(
             [
@@ -43,19 +44,23 @@ class ServiceProvider extends LaravelServiceProvider
      * Register the application services.
      *
      */
-    public function register()
+    #[Override]
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/' . $this->packageName . '.php', $this->packageName);
 
-        $this->app->bind(AmqpMiddleware::class, function () {
+        $this->app->bind(AmqpMiddleware::class, function (): AmqpMiddleware {
+
+            $amqp = resolve(Amqp::class);
+
             return new AmqpMiddleware(
                 resolve(AmqpMessageFactory::class),
-                resolve(Amqp::class),
+                $amqp->channel,
                 config('transactional-event-publisher.properties.amqp')
             );
         });
 
-        $this->app->bind(ModelObserver::class, function () {
+        $this->app->bind(ModelObserver::class, function (): ModelObserver {
             $middlewareClasses = config('transactional-event-publisher.middleware');
             if (!is_array($middlewareClasses)) {
                 $middlewareClasses = [$middlewareClasses];
@@ -74,11 +79,9 @@ class ServiceProvider extends LaravelServiceProvider
 
         $this->app->bindMethod(
             'Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents@handle',
-            function ($job) {
-                return $job->handle(
-                    resolve(config('transactional-event-publisher.event_publisher_middleware')),
-                );
-            }
+            fn ($job) => $job->handle(
+                resolve(config('transactional-event-publisher.event_publisher_middleware')),
+            )
         );
 
         $this->commands(

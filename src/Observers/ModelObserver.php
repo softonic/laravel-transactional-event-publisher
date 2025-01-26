@@ -5,6 +5,7 @@ namespace Softonic\TransactionalEventPublisher\Observers;
 use Illuminate\Database\Eloquent\Model;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 
 class ModelObserver
@@ -12,7 +13,7 @@ class ModelObserver
     /**
      * @var EventStoreMiddlewareInterface[]
      */
-    private array $eventStoreMiddleware;
+    private readonly array $eventStoreMiddleware;
 
     /**
      * @param EventStoreMiddlewareInterface | EventStoreMiddlewareInterface[] $eventStoreMiddleware
@@ -78,12 +79,12 @@ class ModelObserver
         return true;
     }
 
-    private function performStoreEventMessage(Model $model, $modelEvent): void
+    private function performStoreEventMessage(Model $model, string $modelEvent): void
     {
         $connection = $model->getConnection();
         $message = $this->builder->build($model, $modelEvent);
 
-        if (true === $this->executeMiddlewares($message)) {
+        if ($this->executeMiddlewares($message)) {
             $connection->commit();
         } else {
             $connection->rollBack();
@@ -91,7 +92,7 @@ class ModelObserver
         }
     }
 
-    private function executeMiddlewares($message): bool
+    private function executeMiddlewares(EventMessageInterface $message): bool
     {
         $success = true;
         foreach ($this->eventStoreMiddleware as $middleware) {

@@ -6,10 +6,13 @@ use Closure;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Log;
 use Mockery;
+use Override;
 use phpmock\mockery\PHPMockery;
+use PHPUnit\Framework\Attributes\Test;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
+use Softonic\TransactionalEventPublisher\ServiceProvider;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class EmitEventsTest extends TestCase
@@ -20,11 +23,12 @@ class EmitEventsTest extends TestCase
 
     private readonly EmitEvents $emitEvents;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->app->register('Softonic\TransactionalEventPublisher\ServiceProvider');
+        $this->app->register(ServiceProvider::class);
 
         $this->loadMigrationsFrom(__DIR__ . '/../../../database/migrations');
 
@@ -40,9 +44,7 @@ class EmitEventsTest extends TestCase
         $this->emitEvents->batchSize = 2;
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchButThereAreNoEventsItShouldWaitAndDoNothing(): void
     {
         PHPMockery::mock(__NAMESPACE__, 'usleep')
@@ -55,9 +57,7 @@ class EmitEventsTest extends TestCase
         self::assertEquals(2, $this->emitEvents->attemptForNoEvents);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchButThereAreNoEventsForFifthTimeItShouldWaitAndDoNothing(): void
     {
         $this->emitEvents->attemptForNoEvents = 5;
@@ -72,9 +72,7 @@ class EmitEventsTest extends TestCase
         self::assertEquals(6, $this->emitEvents->attemptForNoEvents);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchAndThereIsOneEventItShouldPublishItAndDeletedIt(): void
     {
         $event = DomainEvent::factory()->create();
@@ -87,9 +85,7 @@ class EmitEventsTest extends TestCase
         self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchAfterThreeAttemptsWithErrorsItShouldPublishItDeleteItAndResetAttempts(): void
     {
         $this->emitEvents->attemptForErrors = 4;
@@ -104,9 +100,7 @@ class EmitEventsTest extends TestCase
         self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchAfterFiveAttemptsWithNoEventsItShouldPublishItDeleteItAndResetAttempts(): void
     {
         $this->emitEvents->attemptForNoEvents = 6;
@@ -121,9 +115,7 @@ class EmitEventsTest extends TestCase
         self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchAndThereAreSameEventsThanBatchSizeItShouldPublishThemAndDeleteThem(): void
     {
         $events = DomainEvent::factory(2)->create();
@@ -133,14 +125,12 @@ class EmitEventsTest extends TestCase
 
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
-        $events->each(function ($event) {
+        $events->each(function (DomainEvent $event): void {
             self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
         });
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchAndThereAreMoreEventsThanBatchSizeItShouldPublishAndDeleteOnlyTheBatchSizeAmount(): void
     {
         $events = DomainEvent::factory(3)->create();
@@ -152,14 +142,12 @@ class EmitEventsTest extends TestCase
 
         self::assertEquals(1, $this->emitEvents->attemptForErrors);
         self::assertEquals(1, $this->emitEvents->attemptForNoEvents);
-        $events->each(function ($event) {
+        $events->each(function (DomainEvent $event): void {
             self::assertDatabaseMissing(DomainEvent::class, ['id' => $event['id']]);
         });
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function whenSendingABatchButThereIsAnErrorPublishingTheEventsItShouldLogAnAlertAndWaitAndDoNotDelete(): void
     {
         $event = DomainEvent::factory()->create();

@@ -4,16 +4,19 @@ namespace Softonic\TransactionalEventPublisher;
 
 use Mockery;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
+use Override;
 
 class TestCase extends TestbenchTestCase
 {
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->withFactories(__DIR__ . '/../database/factories');
+        $this->loadMigrationsFrom(__DIR__ . '/../database/factories');
     }
 
+    #[Override]
     protected function tearDown(): void
     {
         if (class_exists('Mockery')) {

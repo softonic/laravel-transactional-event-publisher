@@ -26,7 +26,7 @@ class DatabaseMiddleware implements EventStoreMiddlewareInterface
             DB::commit();
 
             return true;
-        } catch (Exception $e) {
+        } catch (Exception) {
             DB::rollBack();
 
             return false;
