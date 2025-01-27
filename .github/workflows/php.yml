@@ -36,4 +36,4 @@ jobs:
           COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
 
       - name: Run test suite
-        run: composer run-script test
+        run: composer run-script tests
