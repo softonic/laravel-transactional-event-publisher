@@ -3,7 +3,9 @@
 namespace Softonic\TransactionalEventPublisher;
 
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
-use Softonic\Amqp\Amqp;
+use Override;
+use PhpAmqpLib\Channel\AMQPChannel;
+use Softonic\TransactionalEventPublisher\Builders\AmqpConnectionBuilder;
 use Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
@@ -22,7 +24,7 @@ class ServiceProvider extends LaravelServiceProvider
      * Bootstrap the application services.
      *
      */
-    public function boot()
+    public function boot(): void
     {
         $this->publishes(
             [
@@ -43,19 +45,28 @@ class ServiceProvider extends LaravelServiceProvider
      * Register the application services.
      *
      */
-    public function register()
+    #[Override]
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/' . $this->packageName . '.php', $this->packageName);
 
-        $this->app->bind(AmqpMiddleware::class, function () {
-            return new AmqpMiddleware(
-                resolve(AmqpMessageFactory::class),
-                resolve(Amqp::class),
+        $this->app->bind('AmqpConnectionChannel', function (): AMQPChannel {
+            $builder = new AmqpConnectionBuilder(
                 config('transactional-event-publisher.properties.amqp')
             );
+
+            $connection = $builder->build();
+
+            return $connection->channel();
         });
 
-        $this->app->bind(ModelObserver::class, function () {
+        $this->app->bind(AmqpMiddleware::class, fn (): AmqpMiddleware => new AmqpMiddleware(
+            resolve(AmqpMessageFactory::class),
+            resolve('AmqpConnectionChannel'),
+            config('transactional-event-publisher.properties.amqp')
+        ));
+
+        $this->app->bind(ModelObserver::class, function (): ModelObserver {
             $middlewareClasses = config('transactional-event-publisher.middleware');
             if (!is_array($middlewareClasses)) {
                 $middlewareClasses = [$middlewareClasses];
@@ -74,11 +85,9 @@ class ServiceProvider extends LaravelServiceProvider
 
         $this->app->bindMethod(
             'Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents@handle',
-            function ($job) {
-                return $job->handle(
-                    resolve(config('transactional-event-publisher.event_publisher_middleware')),
-                );
-            }
+            fn ($job) => $job->handle(
+                resolve(config('transactional-event-publisher.event_publisher_middleware')),
+            )
         );
 
         $this->commands(

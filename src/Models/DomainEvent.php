@@ -26,7 +26,7 @@ class DomainEvent extends Model
      */
     public $timestamps = false;
 
-    public function setMessageAttribute(EventMessageInterface $message)
+    public function setMessageAttribute(EventMessageInterface $message): void
     {
         $this->attributes['message'] = serialize(clone $message);
     }

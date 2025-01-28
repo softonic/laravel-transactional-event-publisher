@@ -5,6 +5,7 @@ namespace Softonic\TransactionalEventPublisher\Observers;
 use Illuminate\Database\Connectors\MySqlConnector;
 use Illuminate\Database\Eloquent\Model;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
@@ -13,10 +14,8 @@ use Softonic\TransactionalEventPublisher\TestCase;
 
 class ModelObserverTest extends TestCase
 {
-    /**
-     * @test
-     */
-    public function whenANewItemIsCreatedShouldStoreTheEventMessage()
+    #[Test]
+    public function whenANewItemIsCreatedShouldStoreTheEventMessage(): void
     {
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
@@ -39,10 +38,8 @@ class ModelObserverTest extends TestCase
         self::assertTrue($modelObserver->created($modelMock));
     }
 
-    /**
-     * @test
-     */
-    public function whenANewItemIsCreatedButTheEventStoreFailsWhenStoring()
+    #[Test]
+    public function whenANewItemIsCreatedButTheEventStoreFailsWhenStoring(): void
     {
         $this->expectException(EventStoreFailedException::class);
 
@@ -67,10 +64,8 @@ class ModelObserverTest extends TestCase
         $modelObserver->created($modelMock);
     }
 
-    /**
-     * @test
-     */
-    public function whenAnItemIsUpdatedShouldStoreTheEventMessage()
+    #[Test]
+    public function whenAnItemIsUpdatedShouldStoreTheEventMessage(): void
     {
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
@@ -93,10 +88,8 @@ class ModelObserverTest extends TestCase
         self::assertTrue($modelObserver->updated($modelMock));
     }
 
-    /**
-     * @test
-     */
-    public function whenAnItemIsUpdatedButTheEventStoreFailsWhenStoring()
+    #[Test]
+    public function whenAnItemIsUpdatedButTheEventStoreFailsWhenStoring(): void
     {
         $this->expectException(EventStoreFailedException::class);
 
@@ -120,10 +113,8 @@ class ModelObserverTest extends TestCase
         $modelObserver->updated($modelMock);
     }
 
-    /**
-     * @test
-     */
-    public function whenAnItemDeletedShouldStoreTheEventMessage()
+    #[Test]
+    public function whenAnItemDeletedShouldStoreTheEventMessage(): void
     {
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();
@@ -146,10 +137,8 @@ class ModelObserverTest extends TestCase
         self::assertTrue($modelObserver->deleted($modelMock));
     }
 
-    /**
-     * @test
-     */
-    public function whenAnItemIsDeletedButTheEventStoreFailsWhenStoring()
+    #[Test]
+    public function whenAnItemIsDeletedButTheEventStoreFailsWhenStoring(): void
     {
         $this->expectException(EventStoreFailedException::class);
 
@@ -173,10 +162,8 @@ class ModelObserverTest extends TestCase
         $modelObserver->deleted($modelMock);
     }
 
-    /**
-     * @test
-     */
-    public function whenItemIsCreatedWithMultipleMiddlewaresShouldStoreTheEventMessagesInAllTheMiddlewares()
+    #[Test]
+    public function whenItemIsCreatedWithMultipleMiddlewaresShouldStoreTheEventMessagesInAllTheMiddlewares(): void
     {
         $mySqlConnectorMock = Mockery::mock(MySqlConnector::class);
         $mySqlConnectorMock->shouldReceive('beginTransaction')->once();

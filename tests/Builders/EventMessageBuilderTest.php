@@ -3,16 +3,15 @@
 namespace Softonic\TransactionalEventPublisher\Builders;
 
 use Illuminate\Support\Carbon;
+use PHPUnit\Framework\Attributes\Test;
 use Softonic\TransactionalEventPublisher\TestCase;
 use Softonic\TransactionalEventPublisher\TestModel;
 
 class EventMessageBuilderTest extends TestCase
 {
 
-    /**
-     * @test
-     */
-    public function whenEventMessageIsBuilt()
+    #[Test]
+    public function whenEventMessageIsBuilt(): void
     {
         config(['transactional-event-publisher.service' => ':service:']);
 

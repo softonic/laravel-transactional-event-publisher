@@ -19,17 +19,17 @@ class EmitEvents extends Command
     /**
      * Max delay for errors retry in seconds (1 minute).
      */
-    private const MAX_DELAY_FOR_ERRORS = 60;
+    private const int MAX_DELAY_FOR_ERRORS = 60;
 
     /**
      * Max delay for no events retry in microseconds (1 second).
      */
-    private const MAX_DELAY_FOR_NO_EVENTS = 1_000_000;
+    private const int MAX_DELAY_FOR_NO_EVENTS = 1_000_000;
 
     /**
      * Base delay for no events retry in microseconds (1 millisecond).
      */
-    private const BASE_DELAY_FOR_NO_EVENTS = 1000;
+    private const int BASE_DELAY_FOR_NO_EVENTS = 1000;
 
     protected $signature = 'event-sourcing:emit
         {--dbConnection=mysql : Indicate the database connection to use }
@@ -94,7 +94,7 @@ class EmitEvents extends Command
 
             exit(1);
 
-        } catch (Exception $e) {
+        } catch (Exception) {
             $this->waitExponentialBackOffForErrors();
 
             return;
@@ -123,7 +123,8 @@ class EmitEvents extends Command
         Log::info("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
 
         $this->eventsProcessed = true;
-        $this->attemptForErrors = $this->attemptForNoEvents = 1;
+        $this->attemptForErrors = 1;
+        $this->attemptForNoEvents = 1;
 
         DomainEvent::on($this->dbConnection)->whereIn('id', $events->pluck('id'))->delete();
         Log::debug("Deleted {$eventMessagesCount} events, last event ID deleted: {$lastId}");
@@ -131,7 +132,7 @@ class EmitEvents extends Command
 
     private function waitExponentialBackOffForErrors(): void
     {
-        $delay = pow(2, $this->attemptForErrors - 1);
+        $delay = 2 ** ($this->attemptForErrors - 1);
         $delay = min($delay, self::MAX_DELAY_FOR_ERRORS);
 
         ++$this->attemptForErrors;
@@ -141,7 +142,7 @@ class EmitEvents extends Command
 
     private function waitExponentialBackOffForNoEvents(): void
     {
-        $delay = self::BASE_DELAY_FOR_NO_EVENTS * pow(2, $this->attemptForNoEvents - 1);
+        $delay = self::BASE_DELAY_FOR_NO_EVENTS * 2 ** ($this->attemptForNoEvents - 1);
         $delay = min($delay, self::MAX_DELAY_FOR_NO_EVENTS);
 
         ++$this->attemptForNoEvents;

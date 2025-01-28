@@ -150,12 +150,12 @@ Testing
 To run the tests, run the following command from the project folder.
 
 ``` bash
-$ make tests
+$ docker compose run test
 ```
 
 To open a terminal in the dev environment:
 ``` bash
-$ make debug
+$ docker compose run --entrypoint=bash php
 ```
 
 License

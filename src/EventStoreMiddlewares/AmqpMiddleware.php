@@ -4,7 +4,7 @@ namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
-use Softonic\Amqp\Amqp;
+use PhpAmqpLib\Channel\AMQPChannel;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
@@ -13,8 +13,8 @@ class AmqpMiddleware implements EventStoreMiddlewareInterface
 {
     public function __construct(
         private readonly AmqpMessageFactory $messageFactory,
-        private readonly Amqp               $amqp,
-        private readonly array              $properties
+        private readonly AMQPChannel        $channel,
+        private readonly array              $properties,
     ) {
     }
 
@@ -25,28 +25,28 @@ class AmqpMiddleware implements EventStoreMiddlewareInterface
     {
         try {
             if (count($messages) === 1) {
-                $this->amqp->publish(
-                    $this->getRoutingKey($messages[0]),
+                $routing = $this->getRoutingKey($messages[0]);
+                $this->channel->basic_publish(
                     $this->messageFactory->make($messages[0]),
-                    $this->properties
+                    $this->properties['exchange'],
+                    $routing
                 );
-
                 return true;
             }
 
             foreach ($messages as $message) {
-                $this->amqp->batchBasicPublish(
-                    $this->getRoutingKey($message),
-                    $this->messageFactory->make($message)
+                $routing = $this->getRoutingKey($message);
+                $this->channel->batch_basic_publish(
+                    $this->messageFactory->make($message),
+                    $this->properties['exchange'],
+                    $routing
                 );
             }
 
-            $this->amqp->batchPublish($this->properties);
-
+            $this->channel->publish_batch();
             return true;
         } catch (Exception $e) {
             Log::error($e->getMessage());
-
             return false;
         }
     }
@@ -61,9 +61,7 @@ class AmqpMiddleware implements EventStoreMiddlewareInterface
         if (isset($this->properties['routing_key_fields'])) {
             $routingKey = implode(
                 '.',
-                array_map(function ($key) use ($message) {
-                    return $message->$key;
-                }, $this->properties['routing_key_fields'])
+                array_map(fn ($key) => $message->$key, $this->properties['routing_key_fields'])
             );
         }
 
