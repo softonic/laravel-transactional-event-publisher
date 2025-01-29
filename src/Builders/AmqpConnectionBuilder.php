@@ -18,7 +18,7 @@ class AmqpConnectionBuilder
         $amqpConfig->setHost($this->config['host']);
         $amqpConfig->setPort($this->config['port']);
         $amqpConfig->setVhost($this->config['vhost']);
-        $amqpConfig->setUser($this->config['user']);
+        $amqpConfig->setUser($this->config['username']);
         $amqpConfig->setPassword($this->config['password']);
 
         if (isset($this->config['ssl_options'])) {
