@@ -11,9 +11,47 @@ class Amqp
 {
     private readonly AMQPStreamConnection $connection;
 
-    public function __construct(AMQPConnectionConfig $config)
+    public function __construct(private readonly AMQPConnectionConfig $config)
     {
-        $this->connection = AMQPConnectionFactory::create($config);
+    }
+
+    public function setUp(array $properties): void
+    {
+        $this->connection = AMQPConnectionFactory::create($this->config);
+
+        $this->connection->channel()->exchange_declare(
+            $properties['exchange'],
+            $properties['exchange_type'],
+            $properties['exchange_passive'] ?? false,
+            $properties['exchange_durable'] ?? true,
+            $properties['exchange_auto_delete'] ?? false,
+            $properties['exchange_internal'] ?? false,
+            $properties['exchange_nowait'] ?? false,
+            $properties['exchange_properties'] ?? []
+        );
+
+        if (!empty($properties['queue']) || isset($properties['queue_force_declare'])) {
+
+            $queueInfo = $this->connection->channel()->queue_declare(
+                $properties['queue'],
+                $properties['queue_passive'] ?? false,
+                $properties['queue_durable'] ?? true,
+                $properties['queue_exclusive'] ?? false,
+                $properties['queue_auto_delete'] ?? false,
+                $properties['queue_nowait'] ?? false,
+                $properties['queue_properties'] ?? []
+            );
+
+            foreach ((array) $properties['routing'] as $routingKey) {
+                $this->connection->channel()->queue_bind(
+                    $properties['queue'] ?: $queueInfo[0],
+                    $properties['exchange'],
+                    $routingKey
+                );
+            }
+        }
+
+        $this->connection->set_close_on_destruct();
     }
 
     public function basic_publish(AMQPMessage $message, string $exchange, string $routingKey): void
@@ -37,42 +75,5 @@ class Amqp
     public function publish_batch(): void
     {
         $this->connection->channel()->publish_batch();
-    }
-
-    public function setUp(array $config): void
-    {
-        $this->connection->channel()->exchange_declare(
-            $config['exchange'],
-            $config['exchange_type'],
-            $config['exchange_passive'] ?? false,
-            $config['exchange_durable'] ?? true,
-            $config['exchange_auto_delete'] ?? false,
-            $config['exchange_internal'] ?? false,
-            $config['exchange_nowait'] ?? false,
-            $config['exchange_properties'] ?? []
-        );
-
-        if (!empty($config['queue']) || isset($config['queue_force_declare'])) {
-
-            $queueInfo = $this->connection->channel()->queue_declare(
-                $config['queue'],
-                $config['queue_passive'] ?? false,
-                $config['queue_durable'] ?? true,
-                $config['queue_exclusive'] ?? false,
-                $config['queue_auto_delete'] ?? false,
-                $config['queue_nowait'] ?? false,
-                $config['queue_properties'] ?? []
-            );
-
-            foreach ((array) $config['routing'] as $routingKey) {
-                $this->connection->channel()->queue_bind(
-                    $config['queue'] ?: $queueInfo[0],
-                    $config['exchange'],
-                    $routingKey
-                );
-            }
-        }
-
-        $this->connection->set_close_on_destruct();
     }
 }
