@@ -2,12 +2,9 @@
 
 namespace Builders;
 
-use Mockery;
-use PhpAmqpLib\Channel\AMQPChannel;
-use PhpAmqpLib\Connection\AMQPConnectionFactory;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Connection\AMQPConnectionConfig;
 use PHPUnit\Framework\Attributes\Test;
-use Softonic\TransactionalEventPublisher\Builders\AmqpConnectionBuilder;
+use Softonic\TransactionalEventPublisher\Builders\AmqpConnectionConfigBuilder;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class AmqpConnectionBuilderTest extends TestCase
@@ -26,28 +23,16 @@ class AmqpConnectionBuilderTest extends TestCase
             'exchange_type' => 'topic',
             'exchange_durable'    => true,
             'queue' => 'test_queue',
-            'routing' => ['test_routing_key']
+            'routing' => ['test_routing_key'],
         ];
 
-        $mockChannel = Mockery::mock(AMQPChannel::class);
-        $mockChannel->shouldReceive('exchange_declare')->once();
-        $mockChannel->shouldReceive('queue_declare')->once()->andReturn(['test_queue']);
-        $mockChannel->shouldReceive('queue_bind')->once();
-
-        $mockConnection = Mockery::mock(AMQPStreamConnection::class);
-        $mockConnection->shouldReceive('channel')->andReturn($mockChannel);
-        $mockConnection->shouldReceive('set_close_on_destruct')->once();
-
-        Mockery::mock('overload:' . AMQPConnectionFactory::class)
-            ->shouldReceive('create')
-            ->once()
-            ->andReturn($mockConnection);
-
-        $builder = new AmqpConnectionBuilder($config);
+        $builder = new AmqpConnectionConfigBuilder($config);
         $connection = $builder->build();
 
-        $this->assertInstanceOf(AMQPStreamConnection::class, $connection);
-
+        $this->assertInstanceOf(AMQPConnectionConfig::class, $connection);
+        $this->assertEquals('localhost', $connection->getHost());
+        $this->assertEquals('AMQPLAIN', $connection->getLoginMethod());
+        $this->assertNull($connection->getStreamContext());
     }
 
     #[Test]
@@ -71,21 +56,10 @@ class AmqpConnectionBuilderTest extends TestCase
             'routing_key_fields'  => ['site', 'service', 'eventType', 'modelName'],
         ];
 
-        $mockChannel = Mockery::mock(AMQPChannel::class);
-        $mockChannel->shouldReceive('exchange_declare')->once();
-
-        $mockConnection = Mockery::mock(AMQPStreamConnection::class);
-        $mockConnection->shouldReceive('channel')->andReturn($mockChannel);
-        $mockConnection->shouldReceive('set_close_on_destruct')->once();
-
-        Mockery::mock('overload:' . AMQPConnectionFactory::class)
-            ->shouldReceive('create')
-            ->once()
-            ->andReturn($mockConnection);
-
-        $builder = new AmqpConnectionBuilder($config);
+        $builder = new AmqpConnectionConfigBuilder($config);
         $connection = $builder->build();
 
-        $this->assertInstanceOf(AMQPStreamConnection::class, $connection);
+        $this->assertInstanceOf(AMQPConnectionConfig::class, $connection);
+        $this->assertNotNull($connection->getStreamContext());
     }
 }

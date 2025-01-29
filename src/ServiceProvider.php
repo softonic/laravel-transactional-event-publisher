@@ -4,12 +4,12 @@ namespace Softonic\TransactionalEventPublisher;
 
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use Override;
-use PhpAmqpLib\Channel\AMQPChannel;
-use Softonic\TransactionalEventPublisher\Builders\AmqpConnectionBuilder;
+use Softonic\TransactionalEventPublisher\Builders\AmqpConnectionConfigBuilder;
 use Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
+use Softonic\TransactionalEventPublisher\Services\Amqp;
 
 /**
  * Class ServiceProvider
@@ -50,19 +50,17 @@ class ServiceProvider extends LaravelServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/' . $this->packageName . '.php', $this->packageName);
 
-        $this->app->bind('AmqpConnectionChannel', function (): AMQPChannel {
-            $builder = new AmqpConnectionBuilder(
+        $this->app->bind('Amqp', function (): Amqp {
+            $builder = new AmqpConnectionConfigBuilder(
                 config('transactional-event-publisher.properties.amqp')
             );
 
-            $connection = $builder->build();
-
-            return $connection->channel();
+            return new Amqp($builder->build());
         });
 
         $this->app->bind(AmqpMiddleware::class, fn (): AmqpMiddleware => new AmqpMiddleware(
             resolve(AmqpMessageFactory::class),
-            resolve('AmqpConnectionChannel'),
+            resolve('Amqp'),
             config('transactional-event-publisher.properties.amqp')
         ));
 

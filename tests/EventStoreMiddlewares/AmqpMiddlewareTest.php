@@ -5,11 +5,11 @@ namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Mockery;
-use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
 use PHPUnit\Framework\Attributes\Test;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
+use Softonic\TransactionalEventPublisher\Services\Amqp;
 use Softonic\TransactionalEventPublisher\TestCase;
 
 class AmqpMiddlewareTest extends TestCase
@@ -30,7 +30,12 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock = Mockery::mock(Amqp::class);
+
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
+
         $amqpChannelMock
             ->shouldReceive('basic_publish')
             ->once()
@@ -71,7 +76,10 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($amqpMessage);
 
-        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock = Mockery::mock(Amqp::class);
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
         $amqpChannelMock
             ->shouldReceive('batch_basic_publish')
             ->twice();
@@ -114,7 +122,10 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock = Mockery::mock(Amqp::class);
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
         $amqpChannelMock
             ->shouldReceive('basic_publish')
             ->once()
@@ -139,7 +150,10 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
-        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock = Mockery::mock(Amqp::class);
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
         $amqpChannelMock
             ->shouldReceive('batch_basic_publish')
             ->once()
@@ -176,7 +190,10 @@ class AmqpMiddlewareTest extends TestCase
             ->once()
             ->andReturn($amqpMessage);
 
-        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock = Mockery::mock(Amqp::class);
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
         $amqpChannelMock
             ->shouldReceive('basic_publish')
             ->once()
@@ -203,7 +220,10 @@ class AmqpMiddlewareTest extends TestCase
             ->twice()
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
-        $amqpChannelMock = Mockery::mock(AMQPChannel::class);
+        $amqpChannelMock = Mockery::mock(Amqp::class);
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
         $amqpChannelMock
             ->shouldReceive('batch_basic_publish')
             ->once()

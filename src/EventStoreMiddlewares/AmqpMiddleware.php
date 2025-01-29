@@ -4,16 +4,16 @@ namespace Softonic\TransactionalEventPublisher\EventStoreMiddlewares;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
-use PhpAmqpLib\Channel\AMQPChannel;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
+use Softonic\TransactionalEventPublisher\Services\Amqp;
 
 class AmqpMiddleware implements EventStoreMiddlewareInterface
 {
     public function __construct(
         private readonly AmqpMessageFactory $messageFactory,
-        private readonly AMQPChannel        $channel,
+        private readonly Amqp               $amqp,
         private readonly array              $properties,
     ) {
     }
@@ -24,9 +24,12 @@ class AmqpMiddleware implements EventStoreMiddlewareInterface
     public function store(EventMessageInterface ...$messages): bool
     {
         try {
+
+            $this->amqp->setUp($this->properties);
+
             if (count($messages) === 1) {
                 $routing = $this->getRoutingKey($messages[0]);
-                $this->channel->basic_publish(
+                $this->amqp->basic_publish(
                     $this->messageFactory->make($messages[0]),
                     $this->properties['exchange'],
                     $routing
@@ -36,14 +39,14 @@ class AmqpMiddleware implements EventStoreMiddlewareInterface
 
             foreach ($messages as $message) {
                 $routing = $this->getRoutingKey($message);
-                $this->channel->batch_basic_publish(
+                $this->amqp->batch_basic_publish(
                     $this->messageFactory->make($message),
                     $this->properties['exchange'],
                     $routing
                 );
             }
 
-            $this->channel->publish_batch();
+            $this->amqp->publish_batch();
             return true;
         } catch (Exception $e) {
             Log::error($e->getMessage());

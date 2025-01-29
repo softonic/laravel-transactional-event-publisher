@@ -3,16 +3,14 @@
 namespace Softonic\TransactionalEventPublisher\Builders;
 
 use PhpAmqpLib\Connection\AMQPConnectionConfig;
-use PhpAmqpLib\Connection\AMQPConnectionFactory;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
 
-class AmqpConnectionBuilder
+class AmqpConnectionConfigBuilder
 {
     public function __construct(private readonly array $config)
     {
     }
 
-    public function build(): AMQPStreamConnection
+    public function build(): AMQPConnectionConfig
     {
         $amqpConfig = new AMQPConnectionConfig();
         $amqpConfig->setHost($this->config['host']);
@@ -39,43 +37,7 @@ class AmqpConnectionBuilder
             $amqpConfig->setChannelRpcTimeout($this->config['channel_rpc_timeout'] ?? 0.0);
         }
 
-        $connection = AMQPConnectionFactory::create($amqpConfig);
-
-        $connection->channel()->exchange_declare(
-            $this->config['exchange'],
-            $this->config['exchange_type'],
-            $this->config['exchange_passive'] ?? false,
-            $this->config['exchange_durable'] ?? true,
-            $this->config['exchange_auto_delete'] ?? false,
-            $this->config['exchange_internal'] ?? false,
-            $this->config['exchange_nowait'] ?? false,
-            $this->config['exchange_properties'] ?? []
-        );
-
-        if (!empty($this->config['queue']) || isset($this->config['queue_force_declare'])) {
-
-            $queueInfo = $connection->channel()->queue_declare(
-                $this->config['queue'],
-                $this->config['queue_passive'] ?? false,
-                $this->config['queue_durable'] ?? true,
-                $this->config['queue_exclusive'] ?? false,
-                $this->config['queue_auto_delete'] ?? false,
-                $this->config['queue_nowait'] ?? false,
-                $this->config['queue_properties'] ?? []
-            );
-
-            foreach ((array) $this->config['routing'] as $routingKey) {
-                $connection->channel()->queue_bind(
-                    $this->config['queue'] ?: $queueInfo[0],
-                    $this->config['exchange'],
-                    $routingKey
-                );
-            }
-        }
-
-        $connection->set_close_on_destruct();
-
-        return $connection;
+        return $amqpConfig;
     }
 
     private function createSslContext($options)
