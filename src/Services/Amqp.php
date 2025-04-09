@@ -18,11 +18,15 @@ class Amqp
 
     public function setUp(): void
     {
+        if ($this->connection) {
+            return;
+        }
+
         $configBuilder = new AmqpConnectionConfigBuilder($this->config);
         $amqpConfig = $configBuilder->build();
-        $connection = AMQPConnectionFactory::create($amqpConfig);
+        $this->connection = AMQPConnectionFactory::create($amqpConfig);
 
-        $connection->channel()->exchange_declare(
+        $this->connection->channel()->exchange_declare(
             $this->config['exchange'],
             $this->config['exchange_type'],
             $this->config['exchange_passive'] ?? false,
@@ -35,7 +39,7 @@ class Amqp
 
         if (!empty($this->config['queue']) || isset($this->config['queue_force_declare'])) {
 
-            $queueInfo = $connection->channel()->queue_declare(
+            $queueInfo = $this->connection->channel()->queue_declare(
                 $this->config['queue'],
                 $this->config['queue_passive'] ?? false,
                 $this->config['queue_durable'] ?? true,
@@ -46,7 +50,7 @@ class Amqp
             );
 
             foreach ((array) $this->config['routing'] as $routingKey) {
-                $connection->channel()->queue_bind(
+                $this->connection->channel()->queue_bind(
                     $this->config['queue'] ?: $queueInfo[0],
                     $this->config['exchange'],
                     $routingKey
@@ -54,14 +58,12 @@ class Amqp
             }
         }
 
-        $connection->set_close_on_destruct();
-
-        $this->channel = $connection->channel();
+        $this->connection->set_close_on_destruct();
     }
 
     public function basic_publish(AMQPMessage $message, string $routingKey): void
     {
-        $this->channel->basic_publish(
+        $this->connection->channel()->basic_publish(
             $message,
             $this->config['exchange'],
             $routingKey
@@ -70,7 +72,7 @@ class Amqp
 
     public function batch_basic_publish(AMQPMessage $message, string $routingKey): void
     {
-        $this->channel->batch_basic_publish(
+        $this->connection->channel()->batch_basic_publish(
             $message,
             $this->config['exchange'],
             $routingKey
@@ -79,7 +81,7 @@ class Amqp
 
     public function publish_batch(): void
     {
-        $this->channel->publish_batch();
+        $this->connection->channel()->publish_batch();
     }
 
     public function getRoutingKey(EventMessageInterface $message): string
