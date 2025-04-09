@@ -11,7 +11,7 @@ use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
 class Amqp
 {
-    public const int CHANNEL_ID = 1;
+    private const int CHANNEL_ID = 1;
 
     private ?AbstractConnection $connection = null;
 
