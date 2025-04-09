@@ -11,7 +11,7 @@ use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
 class Amqp
 {
-    private AMQPChannel $channel;
+    private readonly AMQPChannel $channel;
 
     private ?AbstractConnection $connection = null;
 
@@ -21,7 +21,7 @@ class Amqp
 
     public function setUp(): void
     {
-        if ($this->connection) {
+        if ($this->connection instanceof AbstractConnection) {
             return;
         }
 
