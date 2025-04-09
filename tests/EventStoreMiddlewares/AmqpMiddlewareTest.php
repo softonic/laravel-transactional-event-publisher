@@ -34,10 +34,6 @@ class AmqpMiddlewareTest extends TestCase
         $amqpChannelMock = Mockery::mock(Amqp::class);
 
         $amqpChannelMock
-            ->shouldReceive('setUp')
-            ->once();
-
-        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->with($message)
             ->once()
@@ -85,9 +81,6 @@ class AmqpMiddlewareTest extends TestCase
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
         $amqpChannelMock
-            ->shouldReceive('setUp')
-            ->once();
-        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->twice();
         $amqpChannelMock
@@ -133,9 +126,6 @@ class AmqpMiddlewareTest extends TestCase
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
         $amqpChannelMock
-            ->shouldReceive('setUp')
-            ->once();
-        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->once()
             ->andReturn('service.created.model');
@@ -164,9 +154,6 @@ class AmqpMiddlewareTest extends TestCase
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
         $amqpChannelMock
-            ->shouldReceive('setUp')
-            ->once();
-        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->twice()
             ->andReturn('service.created.model');
@@ -194,6 +181,7 @@ class AmqpMiddlewareTest extends TestCase
         $message->service   = 'service';
         $message->eventType = 'created';
         $message->modelName = 'Model';
+
         $amqpMessage        = new AMQPMessage();
 
         $amqpMessageFactory = Mockery::mock(AmqpMessageFactory::class);
@@ -203,9 +191,6 @@ class AmqpMiddlewareTest extends TestCase
             ->andReturn($amqpMessage);
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
-        $amqpChannelMock
-            ->shouldReceive('setUp')
-            ->once();
         $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->once()
@@ -237,9 +222,6 @@ class AmqpMiddlewareTest extends TestCase
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
-        $amqpChannelMock
-            ->shouldReceive('setUp')
-            ->once();
         $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->once()
