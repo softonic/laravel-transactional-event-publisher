@@ -11,7 +11,7 @@ use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 
 class Amqp
 {
-    private readonly AMQPChannel $channel;
+    public const int CHANNEL_ID = 1;
 
     private ?AbstractConnection $connection = null;
 
@@ -29,7 +29,7 @@ class Amqp
         $amqpConfig = $configBuilder->build();
         $this->connection = AMQPConnectionFactory::create($amqpConfig);
 
-        $this->connection->channel()->exchange_declare(
+        $this->connection->channel(self::CHANNEL_ID)->exchange_declare(
             $this->config['exchange'],
             $this->config['exchange_type'],
             $this->config['exchange_passive'] ?? false,
@@ -42,7 +42,7 @@ class Amqp
 
         if (!empty($this->config['queue']) || isset($this->config['queue_force_declare'])) {
 
-            $queueInfo = $this->connection->channel()->queue_declare(
+            $queueInfo = $this->connection->channel(self::CHANNEL_ID)->queue_declare(
                 $this->config['queue'],
                 $this->config['queue_passive'] ?? false,
                 $this->config['queue_durable'] ?? true,
@@ -53,7 +53,7 @@ class Amqp
             );
 
             foreach ((array) $this->config['routing'] as $routingKey) {
-                $this->connection->channel()->queue_bind(
+                $this->connection->channel(self::CHANNEL_ID)->queue_bind(
                     $this->config['queue'] ?: $queueInfo[0],
                     $this->config['exchange'],
                     $routingKey
@@ -66,7 +66,7 @@ class Amqp
 
     public function basic_publish(AMQPMessage $message, string $routingKey): void
     {
-        $this->connection->channel()->basic_publish(
+        $this->connection->channel(self::CHANNEL_ID)->basic_publish(
             $message,
             $this->config['exchange'],
             $routingKey
@@ -75,7 +75,7 @@ class Amqp
 
     public function batch_basic_publish(AMQPMessage $message, string $routingKey): void
     {
-        $this->connection->channel()->batch_basic_publish(
+        $this->connection->channel(self::CHANNEL_ID)->batch_basic_publish(
             $message,
             $this->config['exchange'],
             $routingKey
@@ -84,7 +84,7 @@ class Amqp
 
     public function publish_batch(): void
     {
-        $this->connection->channel()->publish_batch();
+        $this->connection->channel(self::CHANNEL_ID)->publish_batch();
     }
 
     public function getRoutingKey(EventMessageInterface $message): string
