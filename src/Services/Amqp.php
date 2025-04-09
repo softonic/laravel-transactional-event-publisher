@@ -3,6 +3,7 @@
 namespace Softonic\TransactionalEventPublisher\Services;
 
 use PhpAmqpLib\Channel\AMQPChannel;
+use PhpAmqpLib\Connection\AbstractConnection;
 use PhpAmqpLib\Connection\AMQPConnectionFactory;
 use PhpAmqpLib\Message\AMQPMessage;
 use Softonic\TransactionalEventPublisher\Builders\AmqpConnectionConfigBuilder;
@@ -11,6 +12,8 @@ use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 class Amqp
 {
     private AMQPChannel $channel;
+
+    private ?AbstractConnection $connection = null;
 
     public function __construct(private readonly array $config)
     {
