@@ -34,6 +34,10 @@ class AmqpMiddlewareTest extends TestCase
         $amqpChannelMock = Mockery::mock(Amqp::class);
 
         $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
+
+        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->with($message)
             ->once()
@@ -81,6 +85,9 @@ class AmqpMiddlewareTest extends TestCase
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
         $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
+        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->twice();
         $amqpChannelMock
@@ -126,6 +133,9 @@ class AmqpMiddlewareTest extends TestCase
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
         $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
+        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->once()
             ->andReturn('service.created.model');
@@ -153,6 +163,9 @@ class AmqpMiddlewareTest extends TestCase
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
         $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->twice()
@@ -192,6 +205,9 @@ class AmqpMiddlewareTest extends TestCase
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
         $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
+        $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->once()
             ->andReturn('softonic.service.created.model');
@@ -222,6 +238,9 @@ class AmqpMiddlewareTest extends TestCase
             ->andReturn($firstAmqpMessage, $secondAmqpMessage);
 
         $amqpChannelMock = Mockery::mock(Amqp::class);
+        $amqpChannelMock
+            ->shouldReceive('setUp')
+            ->once();
         $amqpChannelMock
             ->shouldReceive('getRoutingKey')
             ->once()
