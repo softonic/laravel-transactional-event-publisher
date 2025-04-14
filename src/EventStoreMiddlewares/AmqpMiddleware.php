@@ -22,6 +22,8 @@ class AmqpMiddleware implements EventStoreMiddlewareInterface
      */
     public function store(EventMessageInterface ...$messages): bool
     {
+        $this->amqp->setUp();
+
         try {
             if (count($messages) === 1) {
                 $this->amqp->basic_publish(
