@@ -18,7 +18,7 @@ class EventMessageBuilderTest extends TestCase
 
         Carbon::setTestNow(Carbon::parse('2021-01-01 00:00:00'));
 
-        $eventMessage = (new EventMessageBuilder())->build($model, 'created');
+        $eventMessage = new EventMessageBuilder()->build($model, 'created');
 
         $this->assertEquals(':service:', $eventMessage->service);
         $this->assertEquals('created', $eventMessage->eventType);
