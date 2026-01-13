@@ -3,13 +3,18 @@ Laravel Transactional Event Publisher
 
 [![Latest Version](https://img.shields.io/github/release/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](https://github.com/softonic/laravel-transactional-event-publisher/releases)
 [![Software License](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/softonic/laravel-transactional-event-publisher/master.svg?style=flat-square)](https://travis-ci.org/softonic/glaravel-transactional-event-publisher)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/softonic/laravel-transactional-event-publisher/tests.yml?branch=master&style=flat-square)](https://github.com/softonic/laravel-transactional-event-publisher/actions)
 [![Coverage Status](https://img.shields.io/scrutinizer/coverage/g/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](https://scrutinizer-ci.com/g/softonic/laravel-transactional-event-publisher/code-structure)
 [![Quality Score](https://img.shields.io/scrutinizer/g/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](https://scrutinizer-ci.com/g/softonic/laravel-transactional-event-publisher)
 [![Total Downloads](https://img.shields.io/packagist/dt/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](https://packagist.org/packages/softonic/laravel-transactional-event-publisher)
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](http://isitmaintained.com/project/softonic/laravel-transactional-event-publisher "Average time to resolve an issue")
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/softonic/laravel-transactional-event-publisher.svg?style=flat-square)](http://isitmaintained.com/project/softonic/laravel-transactional-event-publisher "Percentage of issues still open")
-Laravel package to handle atomicity between Eloquent model operations and domain event message generation. 
+
+Laravel package to handle atomicity between Eloquent model operations and domain event message generation.
+
+**Requirements:**
+- PHP >= 8.5
+- Laravel 12.x
 
 Main features
 -------------
@@ -145,22 +150,27 @@ Take into account if an error occurs between the event of creating/updating/dele
 Testing
 -------
 
-`softonic/laravel-transactional-event-publisher` has a [PHPUnit](https://phpunit.de) test suite and a coding style compliance test suite using [PHP CS Fixer](http://cs.sensiolabs.org/).
+`softonic/laravel-transactional-event-publisher` has a [PHPUnit](https://phpunit.de) test suite and a coding style compliance test suite using [PHP CS Fixer](http://cs.sensiolabs.org/) following [PSR-12](http://www.php-fig.org/psr/psr-12/).
 
 To run the tests, run the following command from the project folder.
 
 ``` bash
-$ docker compose run test
+$ docker compose run --rm tests
+```
+
+To run PHPStan static analysis:
+``` bash
+$ docker compose run --rm phpstan
 ```
 
 To open a terminal in the dev environment:
 ``` bash
-$ docker compose run --entrypoint=bash php
+$ docker compose run --rm --entrypoint=bash php
 ```
 
 License
 -------
 The Apache 2.0 license. Please see [LICENSE](LICENSE) for more information.
 
-[PSR-2]: http://www.php-fig.org/psr/psr-2/
+[PSR-12]: http://www.php-fig.org/psr/psr-12/
 [PSR-4]: http://www.php-fig.org/psr/psr-4/

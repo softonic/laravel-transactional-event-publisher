@@ -1,0 +1,8 @@
+parameters:
+	level: 7
+	paths:
+		- src
+	ignoreErrors:
+		- '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::#'
+		- '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model#'
+		- '#Access to protected property Illuminate\\Support\\Collection::\$items#'

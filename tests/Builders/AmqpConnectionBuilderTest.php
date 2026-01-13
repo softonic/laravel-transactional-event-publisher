@@ -9,7 +9,6 @@ use Softonic\TransactionalEventPublisher\TestCase;
 
 class AmqpConnectionBuilderTest extends TestCase
 {
-
     #[Test]
     public function whenAmqpConnectionIsBuilt(): void
     {

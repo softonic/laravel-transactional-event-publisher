@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   php:
     build:
@@ -7,6 +5,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/app
+    command: sh -c "git config --global --add safe.directory /app && bash"
 
   install:
     build:
@@ -14,7 +13,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/app
-    command: composer install
+    command: sh -c "git config --global --add safe.directory /app && composer install"
 
   update:
     build:
@@ -22,7 +21,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/app
-    command: composer update
+    command: sh -c "git config --global --add safe.directory /app && composer update"
 
   phpunit:
     build:
@@ -30,7 +29,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/app
-    command: composer phpunit
+    command: sh -c "git config --global --add safe.directory /app && composer phpunit"
 
   tests:
     build:
@@ -38,7 +37,15 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/app
-    command: composer run tests
+    command: sh -c "git config --global --add safe.directory /app && composer run tests"
+
+  phpstan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+    command: sh -c "git config --global --add safe.directory /app && composer run phpstan"
 
   fix-cs:
     build:
@@ -46,4 +53,4 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/app
-    command: composer run fix-cs
+    command: sh -c "git config --global --add safe.directory /app && composer run fix-cs"

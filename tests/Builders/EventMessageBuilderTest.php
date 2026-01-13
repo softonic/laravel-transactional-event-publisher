@@ -9,7 +9,6 @@ use Softonic\TransactionalEventPublisher\TestModel;
 
 class EventMessageBuilderTest extends TestCase
 {
-
     #[Test]
     public function whenEventMessageIsBuilt(): void
     {

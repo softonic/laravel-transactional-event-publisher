@@ -37,8 +37,8 @@ return RectorConfig::configure()
     ->withPhpSets(php83: true)
     ->withSets(
         [
-            PHPUnitSetList::PHPUNIT_100,
             PHPUnitSetList::PHPUNIT_110,
+            PHPUnitSetList::PHPUNIT_120,
         ]
     )
     ->withPreparedSets(
