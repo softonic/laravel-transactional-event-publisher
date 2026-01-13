@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/app
-    command: sh -c "git config --global --add safe.directory /app && bash"
 
   install:
     build:
@@ -47,10 +46,19 @@ services:
       - ./:/app
     command: sh -c "git config --global --add safe.directory /app && composer run phpstan"
 
-  fix-cs:
+  fixcs:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - ./:/app
     command: sh -c "git config --global --add safe.directory /app && composer run fix-cs"
+
+  # Debug service with Xdebug enabled (use this when you need to debug)
+  debug:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+    command: sh -c "mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini.disabled /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini 2>/dev/null || true; php -dxdebug.mode=debug -dpcov.enabled=0 $@"

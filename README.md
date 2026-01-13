@@ -152,20 +152,46 @@ Testing
 
 `softonic/laravel-transactional-event-publisher` has a [PHPUnit](https://phpunit.de) test suite and a coding style compliance test suite using [PHP CS Fixer](http://cs.sensiolabs.org/) following [PSR-12](http://www.php-fig.org/psr/psr-12/).
 
-To run the tests, run the following command from the project folder.
+To run the tests, run the following command from the project folder:
 
 ``` bash
 $ docker compose run --rm tests
 ```
 
+To run PHPUnit only:
+
+``` bash
+$ docker compose run --rm phpunit
+```
+
 To run PHPStan static analysis:
+
 ``` bash
 $ docker compose run --rm phpstan
 ```
 
+To check code style:
+
+``` bash
+$ docker compose run --rm php composer run checkstyle
+```
+
+To fix code style issues:
+
+``` bash
+$ docker compose run --rm fixcs
+```
+
 To open a terminal in the dev environment:
+
 ``` bash
 $ docker compose run --rm --entrypoint=bash php
+```
+
+For debugging with Xdebug:
+
+``` bash
+$ docker compose run --rm debug
 ```
 
 License
