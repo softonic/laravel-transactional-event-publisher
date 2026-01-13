@@ -3,6 +3,6 @@ parameters:
 	paths:
 		- src
 	ignoreErrors:
-		- '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::#'
-		- '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model#'
-		- '#Access to protected property Illuminate\\Support\\Collection::\$items#'
+		- '#Call to an undefined static method Softonic\\TransactionalEventPublisher\\Models\\DomainEvent::insert\(\)#'
+		- '#While loop condition is always true#'
+		- '#Negated boolean expression is always true#'

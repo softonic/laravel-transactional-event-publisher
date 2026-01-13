@@ -34,7 +34,7 @@ return RectorConfig::configure()
         __DIR__ . '/tests',
     ])
     ->withImportNames()
-    ->withPhpSets(php83: true)
+    ->withPhpSets(php85: true)
     ->withSets(
         [
             PHPUnitSetList::PHPUNIT_110,

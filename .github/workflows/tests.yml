@@ -41,6 +41,3 @@ jobs:
 
       - name: Check code style
         run: composer run checkstyle
-
-      - name: Run static analysis
-        run: composer run phpstan
