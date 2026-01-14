@@ -40,7 +40,10 @@ class AmqpConnectionConfigBuilder
         return $amqpConfig;
     }
 
-    private function createSslContext($options)
+    /**
+     * @return resource
+     */
+    private function createSslContext(array $options)
     {
         $ssl_context = stream_context_create();
         foreach ($options as $k => $v) {

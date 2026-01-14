@@ -187,6 +187,7 @@ class AmqpMiddlewareTest extends TestCase
         self::assertTrue($amqpMiddleware->store(...$messages));
     }
 
+    #[Test]
     public function testConfigurableRoutingKey(): void
     {
         $message            = $this->getOneMessage();
@@ -221,6 +222,7 @@ class AmqpMiddlewareTest extends TestCase
         self::assertTrue($amqpMiddleware->store($message));
     }
 
+    #[Test]
     public function testConfigurableRoutingKeyForMultipleMessages(): void
     {
         $messages          = $this->getTwoMessages();

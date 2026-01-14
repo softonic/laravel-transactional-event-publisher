@@ -31,7 +31,7 @@ class DomainEvent extends Model
         $this->attributes['message'] = serialize(clone $message);
     }
 
-    public function getMessageAttribute($value)
+    public function getMessageAttribute($value): EventMessageInterface
     {
         return unserialize($value);
     }

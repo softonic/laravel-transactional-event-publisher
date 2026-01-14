@@ -1,0 +1,8 @@
+parameters:
+	level: 7
+	paths:
+		- src
+	ignoreErrors:
+		- '#Call to an undefined static method Softonic\\TransactionalEventPublisher\\Models\\DomainEvent::insert\(\)#'
+		- '#While loop condition is always true#'
+		- '#Negated boolean expression is always true#'

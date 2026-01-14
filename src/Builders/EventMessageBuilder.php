@@ -10,7 +10,6 @@ use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class EventMessageBuilder implements EventMessageBuilderInterface
 {
-
     public function build(Model $model, string $eventType): EventMessageInterface
     {
         $modelName = class_basename($model);
