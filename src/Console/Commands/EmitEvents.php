@@ -120,7 +120,7 @@ class EmitEvents extends Command
             throw new RuntimeException($errorMessage);
         }
 
-        Log::info("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
+        Log::debug("Published {$eventMessagesCount} events, last event ID published: {$lastId}");
 
         $this->eventsProcessed = true;
         $this->attemptForErrors = 1;
