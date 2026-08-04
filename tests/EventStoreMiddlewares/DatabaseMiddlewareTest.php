@@ -64,6 +64,7 @@ class DatabaseMiddlewareTest extends TestCase
 
         self::assertStringContainsString('domain_events', $loggedMessage);
         self::assertSame(QueryException::class, $loggedContext['exception']);
+        self::assertStringContainsString('no such table: domain_events', $loggedContext['error']);
         self::assertSame(
             [
                 [
@@ -112,7 +113,7 @@ class DatabaseMiddlewareTest extends TestCase
 
         self::assertStringNotContainsString($payload, $loggedMessage);
         self::assertStringNotContainsString($payload, json_encode($loggedContext));
-        self::assertLessThan(1000, strlen($loggedMessage));
+        self::assertLessThan(1000, strlen($loggedContext['error']));
         self::assertSame(strlen(serialize($message)), $loggedContext['messages'][0]['sizeInBytes']);
     }
 
