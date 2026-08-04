@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 use InvalidArgumentException;
 use RuntimeException;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
+use Softonic\TransactionalEventPublisher\Services\LogDescriber;
 
 class EmitEvents extends Command
 {
@@ -77,11 +79,16 @@ class EmitEvents extends Command
         try {
             $events = DomainEvent::on($this->dbConnectionUnbuffered)->cursor();
         } catch (InvalidArgumentException $e) {
-            Log::alert("Database error: {$e->getMessage()}");
+            Log::alert('Database error retrieving the events', LogDescriber::describeException($e));
 
             exit(1);
 
         } catch (Exception $e) {
+            Log::warning(
+                'Unexpected error retrieving the events. Retrying...',
+                [...LogDescriber::describeException($e), 'attempt' => $this->attemptForErrors]
+            );
+
             $this->waitExponentialBackOffForErrors();
 
             return;
@@ -90,11 +97,16 @@ class EmitEvents extends Command
         try {
             $events->chunk($this->batchSize)->each($this->sendEvents(...));
         } catch (QueryException $e) {
-            Log::alert("Database error: {$e->getMessage()}");
+            Log::alert('Database error sending the events', LogDescriber::describeException($e));
 
             exit(1);
 
-        } catch (Exception) {
+        } catch (Exception $e) {
+            Log::warning(
+                'Unexpected error sending the events. Retrying...',
+                [...LogDescriber::describeException($e), 'attempt' => $this->attemptForErrors]
+            );
+
             $this->waitExponentialBackOffForErrors();
 
             return;
@@ -115,7 +127,19 @@ class EmitEvents extends Command
 
         if (!$this->eventPublisherMiddleware->store(...$eventMessages)) {
             $errorMessage = "The events couldn't be sent. Retrying...";
-            Log::alert($errorMessage, ['eventMessages' => $eventMessages->toArray()]);
+            // The messages are described instead of dumped because a whole batch of payloads does
+            // not belong in a log entry, while their size is what usually explains the failure.
+            Log::alert(
+                $errorMessage,
+                [
+                    'messageCount'     => $eventMessagesCount,
+                    'totalSizeInBytes' => $eventMessages->sum(
+                        static fn (EventMessageInterface $message): int => strlen(serialize($message))
+                    ),
+                    'lastEventId'      => $lastId,
+                    'messages'         => $eventMessages->map(LogDescriber::describeMessage(...))->all(),
+                ]
+            );
 
             throw new RuntimeException($errorMessage);
         }
