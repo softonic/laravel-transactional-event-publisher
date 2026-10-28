@@ -9,17 +9,24 @@ use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
 use Softonic\TransactionalEventPublisher\DomainEvents;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 
 /**
- * @deprecated since 11.1.0, use the PublishesDomainEvents trait in the model (or its base model) instead.
- *             This observer opens a transaction level in the "-ing" events that is left open when the query fails.
+ * Stores the domain event of every insert, update and delete of the observed models.
+ *
+ * On models using the PublishesDomainEvents trait it only stores the event: the trait runs the write and this
+ * observer in the same transaction. On models without the trait it keeps the deprecated behaviour of opening a
+ * transaction level in the "-ing" events, which is left open when the query fails.
  */
 class ModelObserver
 {
     private static bool $deprecationTriggered = false;
 
-    private readonly DomainEventObserver $domainEventObserver;
+    /**
+     * @var EventStoreMiddlewareInterface[]
+     */
+    private readonly array $eventStoreMiddleware;
 
     /**
      * @param EventStoreMiddlewareInterface | EventStoreMiddlewareInterface[] $eventStoreMiddleware
@@ -28,7 +35,7 @@ class ModelObserver
         array|EventStoreMiddlewareInterface $eventStoreMiddleware,
         protected readonly EventMessageBuilderInterface $builder
     ) {
-        $this->domainEventObserver = new DomainEventObserver($eventStoreMiddleware, $builder);
+        $this->eventStoreMiddleware = is_array($eventStoreMiddleware) ? $eventStoreMiddleware : [$eventStoreMiddleware];
     }
 
     /**
@@ -36,13 +43,7 @@ class ModelObserver
      */
     public function creating(Model $model): void
     {
-        if ($this->isSkipped($model)) {
-            return;
-        }
-
-        $this->triggerDeprecation();
-
-        $model->getConnection()->beginTransaction();
+        $this->beginLegacyTransaction($model);
     }
 
     /**
@@ -50,10 +51,6 @@ class ModelObserver
      */
     public function created(Model $model): bool
     {
-        if ($this->isSkipped($model)) {
-            return true;
-        }
-
         $this->performStoreEventMessage($model, __FUNCTION__);
 
         return true;
@@ -64,13 +61,7 @@ class ModelObserver
      */
     public function updating(Model $model): void
     {
-        if ($this->isSkipped($model)) {
-            return;
-        }
-
-        $this->triggerDeprecation();
-
-        $model->getConnection()->beginTransaction();
+        $this->beginLegacyTransaction($model);
     }
 
     /**
@@ -78,10 +69,6 @@ class ModelObserver
      */
     public function updated(Model $model): bool
     {
-        if ($this->isSkipped($model)) {
-            return true;
-        }
-
         $this->performStoreEventMessage($model, __FUNCTION__);
 
         return true;
@@ -92,13 +79,7 @@ class ModelObserver
      */
     public function deleting(Model $model): void
     {
-        if ($this->isSkipped($model)) {
-            return;
-        }
-
-        $this->triggerDeprecation();
-
-        $model->getConnection()->beginTransaction();
+        $this->beginLegacyTransaction($model);
     }
 
     /**
@@ -106,21 +87,32 @@ class ModelObserver
      */
     public function deleted(Model $model): bool
     {
-        if ($this->isSkipped($model)) {
-            return true;
-        }
-
         $this->performStoreEventMessage($model, __FUNCTION__);
 
         return true;
     }
 
+    /**
+     * Nothing is done while publishing is disabled through DomainEvents.
+     *
+     * @throws EventStoreFailedException
+     */
     private function performStoreEventMessage(Model $model, string $modelEvent): void
     {
+        if (!DomainEvents::isEnabled()) {
+            return;
+        }
+
+        if ($this->usesTrait($model)) {
+            $this->storeEventMessage($model, $modelEvent);
+
+            return;
+        }
+
         $connection = $model->getConnection();
 
         try {
-            $this->domainEventObserver->storeEventMessage($model, $modelEvent);
+            $this->storeEventMessage($model, $modelEvent);
         } catch (EventStoreFailedException $exception) {
             $connection->rollBack();
 
@@ -131,18 +123,42 @@ class ModelObserver
     }
 
     /**
-     * Models using the PublishesDomainEvents trait are already handled by the DomainEventObserver, and nothing is
-     * done while publishing is disabled through DomainEvents.
+     * @throws EventStoreFailedException
      */
-    private function isSkipped(Model $model): bool
+    private function storeEventMessage(Model $model, string $modelEvent): void
     {
-        return !DomainEvents::isEnabled() || $this->isHandledByTrait($model);
+        $message = $this->builder->build($model, $modelEvent);
+
+        if (!$this->executeMiddlewares($message)) {
+            throw new EventStoreFailedException('Event Store failed when storing event message');
+        }
+    }
+
+    private function executeMiddlewares(EventMessageInterface $message): bool
+    {
+        $success = true;
+        foreach ($this->eventStoreMiddleware as $middleware) {
+            $success &= $middleware->store($message);
+        }
+
+        return (bool) $success;
     }
 
     /**
-     * Models using the PublishesDomainEvents trait are already handled by the DomainEventObserver.
+     * @deprecated since 11.1.0, add the PublishesDomainEvents trait to the model (or its base model) instead.
      */
-    private function isHandledByTrait(Model $model): bool
+    private function beginLegacyTransaction(Model $model): void
+    {
+        if (!DomainEvents::isEnabled() || $this->usesTrait($model)) {
+            return;
+        }
+
+        $this->triggerDeprecation();
+
+        $model->getConnection()->beginTransaction();
+    }
+
+    private function usesTrait(Model $model): bool
     {
         return in_array(PublishesDomainEvents::class, class_uses_recursive($model), true);
     }
@@ -155,7 +171,8 @@ class ModelObserver
 
         self::$deprecationTriggered = true;
         trigger_error(
-            self::class . ' is deprecated since 11.1.0, use the ' . PublishesDomainEvents::class . ' trait in the model instead.',
+            'Observing a model without the ' . PublishesDomainEvents::class . ' trait with ' . self::class
+            . ' is deprecated since 11.1.0, add the trait to the model.',
             E_USER_DEPRECATED
         );
     }

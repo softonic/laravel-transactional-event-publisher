@@ -3,21 +3,14 @@
 namespace Softonic\TransactionalEventPublisher\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
-use Softonic\TransactionalEventPublisher\Observers\DomainEventObserver;
 
 /**
- * Publishes a domain event for every insert, update and delete of the model.
- *
- * The write and the storage of its event run in the same transaction, so any failure
- * (query, event store, halted listener...) rolls back only the level opened here.
+ * Runs every insert, update and delete of the model in its own transaction, together with the storage of its domain
+ * event by the ModelObserver attached to the model. Any failure (query, event store, halted listener...) rolls back
+ * only the level opened here.
  */
 trait PublishesDomainEvents
 {
-    public static function bootPublishesDomainEvents(): void
-    {
-        static::observe(DomainEventObserver::class);
-    }
-
     /**
      * @return bool
      */

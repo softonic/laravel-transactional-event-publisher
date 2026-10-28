@@ -52,9 +52,8 @@ class ModelObserverDeprecationTest extends DomainEventsTestCase
     }
 
     #[Test]
-    public function whenObservingAModelWithTheTraitItDoesNotStoreExtraEventsNorOpenExtraLevels(): void
+    public function whenObservingAModelWithTheTraitItStoresOneEventPerWriteWithoutOpeningExtraLevels(): void
     {
-        PublishingModel::observe(ModelObserver::class);
         $levels = [];
 
         DB::transaction(function () use (&$levels): void {
@@ -77,7 +76,6 @@ class ModelObserverDeprecationTest extends DomainEventsTestCase
     #[Test]
     public function whenObservingAModelWithTheTraitAndTheInsertFailsNoTransactionIsLeftOpen(): void
     {
-        PublishingModel::observe(ModelObserver::class);
         $this->seedPublishingModel(1, 'existing');
         $levelInsideAfterFailure = null;
         $caught = null;
@@ -98,22 +96,5 @@ class ModelObserverDeprecationTest extends DomainEventsTestCase
         self::assertSame(1, $levelInsideAfterFailure);
         self::assertSame(0, $this->transactionLevel());
         self::assertSame([], $this->middleware->storedMessages);
-    }
-
-    #[Test]
-    public function whenCalledDirectlyOnAModelWithTheTraitItIsACompleteNoOp(): void
-    {
-        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
-        $observer = $this->app->make(ModelObserver::class);
-        $levels = [];
-
-        foreach (['creating', 'created', 'updating', 'updated', 'deleting', 'deleted'] as $modelEvent) {
-            $observer->{$modelEvent}($model);
-            $levels[] = $this->transactionLevel();
-        }
-
-        self::assertSame([0, 0, 0, 0, 0, 0], $levels);
-        self::assertSame(0, $this->builder->buildCalls);
-        self::assertSame([], $this->middleware->transactionLevelsWhenStoring);
     }
 }

@@ -13,6 +13,7 @@ use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Fixtures\AdoptingPublishingModel;
 use Softonic\TransactionalEventPublisher\Fixtures\DomainEventsTestCase;
 use Softonic\TransactionalEventPublisher\Fixtures\PublishingModel;
+use Softonic\TransactionalEventPublisher\Fixtures\UnobservedPublishingModel;
 use Throwable;
 
 class PublishesDomainEventsTest extends DomainEventsTestCase
@@ -501,6 +502,27 @@ class PublishesDomainEventsTest extends DomainEventsTestCase
 
                 return static fn () => $model->delete();
         }
+    }
+
+    #[Test]
+    public function withoutTheModelObserverAttachedTheWritesRunInTheirTransactionButNoEventIsStored(): void
+    {
+        $levels = [];
+
+        DB::transaction(function () use (&$levels): void {
+            $model = UnobservedPublishingModel::create(['id' => 1, 'name' => 'created']);
+            $levels[] = $this->transactionLevel();
+            $model->name = 'updated';
+            $model->save();
+            $model->increment('counter');
+            $model->delete();
+            $levels[] = $this->transactionLevel();
+        });
+
+        self::assertSame([1, 1], $levels);
+        self::assertSame([], $this->middleware->storedMessages);
+        self::assertSame(0, $this->builder->buildCalls);
+        self::assertFalse($this->publishingModelExists(1));
     }
 
     private function makeEventStoreFail(string $failureMode): void

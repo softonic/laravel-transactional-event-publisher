@@ -7,9 +7,9 @@ namespace Softonic\TransactionalEventPublisher;
 /**
  * Process-wide switch to stop storing domain events, e.g. during bulk synchronisations.
  *
- * It is checked when each event is going to be stored, so it does not depend on when the models boot. While it is
- * disabled the writes of models using the PublishesDomainEvents trait still run in their own transaction, and the
- * deprecated ModelObserver neither opens transaction levels nor stores events.
+ * It is checked when each event is going to be stored, so it does not depend on when the observers are registered.
+ * While it is disabled the ModelObserver neither opens transaction levels nor stores events, and the writes of models
+ * using the PublishesDomainEvents trait still run in their own transaction.
  */
 final class DomainEvents
 {

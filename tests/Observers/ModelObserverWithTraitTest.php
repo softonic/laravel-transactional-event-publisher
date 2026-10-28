@@ -7,10 +7,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Fixtures\DomainEventsTestCase;
-use Softonic\TransactionalEventPublisher\Fixtures\LegacyModel;
+use Softonic\TransactionalEventPublisher\Fixtures\PublishingModel;
 use Softonic\TransactionalEventPublisher\Fixtures\SpyEventStoreMiddleware;
 
-class DomainEventObserverTest extends DomainEventsTestCase
+/**
+ * The ModelObserver on models using the PublishesDomainEvents trait: it only stores the event, the trait manages the
+ * transaction.
+ */
+class ModelObserverWithTraitTest extends DomainEventsTestCase
 {
     public static function modelEventProvider(): array
     {
@@ -26,13 +30,13 @@ class DomainEventObserverTest extends DomainEventsTestCase
     public function whenResolvedFromTheContainerItStoresTheEventWithTheConfiguredMiddlewareAndBuilder(
         string $modelEvent
     ): void {
-        $model = new LegacyModel(['id' => 1, 'name' => 'model']);
-        $observer = $this->app->make(DomainEventObserver::class);
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
+        $observer = $this->app->make(ModelObserver::class);
 
         $observer->{$modelEvent}($model);
 
         self::assertSame([$modelEvent], $this->middleware->storedEventTypes());
-        self::assertSame(LegacyModel::class, $this->middleware->storedMessages[0]->toArray()['modelName']);
+        self::assertSame(PublishingModel::class, $this->middleware->storedMessages[0]->toArray()['modelName']);
         self::assertSame(1, $this->builder->buildCalls);
     }
 
@@ -40,8 +44,8 @@ class DomainEventObserverTest extends DomainEventsTestCase
     #[DataProvider('modelEventProvider')]
     public function whenStoringTheEventItNeverOpensNorClosesTransactionLevels(string $modelEvent): void
     {
-        $model = new LegacyModel(['id' => 1, 'name' => 'model']);
-        $observer = $this->app->make(DomainEventObserver::class);
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
+        $observer = $this->app->make(ModelObserver::class);
         DB::beginTransaction();
 
         $observer->{$modelEvent}($model);
@@ -55,9 +59,9 @@ class DomainEventObserverTest extends DomainEventsTestCase
     #[DataProvider('modelEventProvider')]
     public function whenTheMiddlewareFailsItThrowsWithoutTouchingTransactionLevels(string $modelEvent): void
     {
-        $model = new LegacyModel(['id' => 1, 'name' => 'model']);
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
         $this->middleware->result = false;
-        $observer = $this->app->make(DomainEventObserver::class);
+        $observer = $this->app->make(ModelObserver::class);
         DB::beginTransaction();
 
         $caught = null;
@@ -75,9 +79,9 @@ class DomainEventObserverTest extends DomainEventsTestCase
     #[Test]
     public function whenThereAreMultipleMiddlewaresItStoresTheEventInAllOfThem(): void
     {
-        $model = new LegacyModel(['id' => 1, 'name' => 'model']);
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
         $secondMiddleware = new SpyEventStoreMiddleware();
-        $observer = new DomainEventObserver([$this->middleware, $secondMiddleware], $this->builder);
+        $observer = new ModelObserver([$this->middleware, $secondMiddleware], $this->builder);
 
         $observer->created($model);
 
@@ -88,11 +92,11 @@ class DomainEventObserverTest extends DomainEventsTestCase
     #[Test]
     public function whenAnyOfMultipleMiddlewaresFailsItThrows(): void
     {
-        $model = new LegacyModel(['id' => 1, 'name' => 'model']);
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
         $failingMiddleware = new SpyEventStoreMiddleware();
         $failingMiddleware->result = false;
 
-        $observer = new DomainEventObserver([$this->middleware, $failingMiddleware], $this->builder);
+        $observer = new ModelObserver([$this->middleware, $failingMiddleware], $this->builder);
 
         $this->expectException(EventStoreFailedException::class);
 
@@ -102,11 +106,11 @@ class DomainEventObserverTest extends DomainEventsTestCase
     #[Test]
     public function whenTheFirstOfMultipleMiddlewaresFailsItThrowsAlthoughTheLastOneSucceeds(): void
     {
-        $model = new LegacyModel(['id' => 1, 'name' => 'model']);
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
         $failingMiddleware = new SpyEventStoreMiddleware();
         $failingMiddleware->result = false;
 
-        $observer = new DomainEventObserver([$failingMiddleware, $this->middleware], $this->builder);
+        $observer = new ModelObserver([$failingMiddleware, $this->middleware], $this->builder);
 
         $this->expectException(EventStoreFailedException::class);
 
@@ -116,11 +120,38 @@ class DomainEventObserverTest extends DomainEventsTestCase
     #[Test]
     public function whenASingleMiddlewareIsGivenItStoresTheEvent(): void
     {
-        $model = new LegacyModel(['id' => 1, 'name' => 'model']);
-        $observer = new DomainEventObserver($this->middleware, $this->builder);
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
+        $observer = new ModelObserver($this->middleware, $this->builder);
 
         $observer->updated($model);
 
         self::assertSame(['updated'], $this->middleware->storedEventTypes());
+    }
+
+    #[Test]
+    public function whenTheWriteIsAboutToHappenItNeverOpensTransactionLevelsNorTriggersADeprecation(): void
+    {
+        $model = new PublishingModel(['id' => 1, 'name' => 'model']);
+        $observer = $this->app->make(ModelObserver::class);
+        $levels = [];
+        $deprecations = 0;
+        set_error_handler(static function () use (&$deprecations): bool {
+            ++$deprecations;
+
+            return true;
+        }, E_USER_DEPRECATED);
+
+        try {
+            foreach (['creating', 'updating', 'deleting'] as $modelEvent) {
+                $observer->{$modelEvent}($model);
+                $levels[] = $this->transactionLevel();
+            }
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertSame([0, 0, 0], $levels);
+        self::assertSame(0, $deprecations);
+        self::assertSame(0, $this->builder->buildCalls);
     }
 }

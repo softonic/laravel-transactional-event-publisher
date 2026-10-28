@@ -8,7 +8,6 @@ use Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
-use Softonic\TransactionalEventPublisher\Observers\DomainEventObserver;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
 use Softonic\TransactionalEventPublisher\Services\Amqp;
 
@@ -59,11 +58,6 @@ class ServiceProvider extends LaravelServiceProvider
         ));
 
         $this->app->bind(ModelObserver::class, fn (): ModelObserver => new ModelObserver(
-            $this->resolveEventStoreMiddlewares(),
-            resolve(config('transactional-event-publisher.messageBuilder'))
-        ));
-
-        $this->app->bind(DomainEventObserver::class, fn (): DomainEventObserver => new DomainEventObserver(
             $this->resolveEventStoreMiddlewares(),
             resolve(config('transactional-event-publisher.messageBuilder'))
         ));
