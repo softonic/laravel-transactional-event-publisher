@@ -7,6 +7,8 @@ use Override;
 use Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
 use Softonic\TransactionalEventPublisher\Factories\AmqpMessageFactory;
+use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
+use Softonic\TransactionalEventPublisher\Observers\DomainEventObserver;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
 use Softonic\TransactionalEventPublisher\Services\Amqp;
 
@@ -56,22 +58,15 @@ class ServiceProvider extends LaravelServiceProvider
             resolve(Amqp::class),
         ));
 
-        $this->app->bind(ModelObserver::class, function (): ModelObserver {
-            $middlewareClasses = config('transactional-event-publisher.middleware');
-            if (!is_array($middlewareClasses)) {
-                $middlewareClasses = [$middlewareClasses];
-            }
+        $this->app->bind(ModelObserver::class, fn (): ModelObserver => new ModelObserver(
+            $this->resolveEventStoreMiddlewares(),
+            resolve(config('transactional-event-publisher.messageBuilder'))
+        ));
 
-            $middlewares = [];
-            foreach ($middlewareClasses as $middlewareClass) {
-                $middlewares[] = resolve($middlewareClass);
-            }
-
-            return new ModelObserver(
-                $middlewares,
-                resolve(config('transactional-event-publisher.messageBuilder'))
-            );
-        });
+        $this->app->bind(DomainEventObserver::class, fn (): DomainEventObserver => new DomainEventObserver(
+            $this->resolveEventStoreMiddlewares(),
+            resolve(config('transactional-event-publisher.messageBuilder'))
+        ));
 
         $this->app->bindMethod(
             'Softonic\TransactionalEventPublisher\Console\Commands\EmitEvents@handle',
@@ -85,5 +80,23 @@ class ServiceProvider extends LaravelServiceProvider
                 EmitEvents::class,
             ]
         );
+    }
+
+    /**
+     * @return EventStoreMiddlewareInterface[]
+     */
+    private function resolveEventStoreMiddlewares(): array
+    {
+        $middlewareClasses = config('transactional-event-publisher.middleware');
+        if (!is_array($middlewareClasses)) {
+            $middlewareClasses = [$middlewareClasses];
+        }
+
+        $middlewares = [];
+        foreach ($middlewareClasses as $middlewareClass) {
+            $middlewares[] = resolve($middlewareClass);
+        }
+
+        return $middlewares;
     }
 }

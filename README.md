@@ -101,26 +101,59 @@ return [
 
 ### Registering Models
 
-To choose what models should send domain events, you need to attach the `\Softonic\TransactionalEventPublisher\ModelObserver` observer class.
+To choose what models should send domain events, use the `\Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents` trait.
+It registers the observer by itself, and runs each insert, update and delete together with the storage of its domain event in
+the same transaction. If anything fails (the query, the event store or a listener halting the operation), only that
+transaction level is rolled back, so the caller's transaction is never left open.
+
+Using it in a base model is enough to cover all the models extending it.
 
 Example:
 
-```
-...
+```php
+use Illuminate\Database\Eloquent\Model;
+use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
 
-use App\Models\Post as MyModel;
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
-
-class EventServiceProvider extends ServiceProvider
+abstract class BaseModel extends Model
 {
-    public function boot()
-    {
-        parent::boot();
+    use PublishesDomainEvents;
+}
+```
 
-        MyModel::observe(ModelObserver::class);
+#### Migrating from `ModelObserver`
+
+Attaching the `\Softonic\TransactionalEventPublisher\Observers\ModelObserver` observer (`MyModel::observe(ModelObserver::class)`)
+is deprecated. It keeps working as before, but it leaves a transaction level open when the query fails, and it triggers an
+`E_USER_DEPRECATED` once per process. To migrate:
+
+1. Add the `PublishesDomainEvents` trait to the models (or to their base model).
+2. Remove the `observe(ModelObserver::class)` calls. While both are present, the `ModelObserver` does nothing for models
+   using the trait, so no event is duplicated.
+
+If the model overrides `performInsert()`, `performUpdate()` or `delete()`, the method of the model takes precedence over
+the trait one. Import the trait method with an alias and call it from the override, so the write still runs in its
+transaction:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
+
+abstract class BaseModel extends Model
+{
+    use PublishesDomainEvents {
+        performInsert as transactionalPerformInsert;
     }
-    ...
+
+    protected function performInsert(Builder $query)
+    {
+        try {
+            return $this->transactionalPerformInsert($query);
+        } catch (UniqueConstraintViolationException $exception) {
+            // The transaction level of the insert is already rolled back here.
+            ...
+        }
+    }
 }
 ```
 
