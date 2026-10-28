@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Softonic\TransactionalEventPublisher\Observers;
 
 use Illuminate\Database\Eloquent\Model;
+use Softonic\TransactionalEventPublisher\DomainEvents;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
@@ -62,10 +63,16 @@ class DomainEventObserver
     }
 
     /**
+     * Does nothing while publishing is disabled through DomainEvents.
+     *
      * @throws EventStoreFailedException
      */
     public function storeEventMessage(Model $model, string $modelEvent): void
     {
+        if (!DomainEvents::isEnabled()) {
+            return;
+        }
+
         $message = $this->builder->build($model, $modelEvent);
 
         if (!$this->executeMiddlewares($message)) {

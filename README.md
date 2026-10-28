@@ -157,6 +157,28 @@ abstract class BaseModel extends Model
 }
 ```
 
+#### Disabling the publication of events
+
+`\Softonic\TransactionalEventPublisher\DomainEvents` disables the storage of domain events for the whole process, for
+example during a bulk synchronisation. It is checked each time an event is going to be stored, so it works regardless of
+when the models boot. While it is disabled, the writes of models using the trait still run in their own transaction, and
+the deprecated `ModelObserver` neither opens transaction levels nor stores events.
+
+```php
+use Softonic\TransactionalEventPublisher\DomainEvents;
+
+DomainEvents::disable();
+// ...
+DomainEvents::enable();
+
+// Or only for a callback, restoring the previous state afterwards (even if it throws):
+DomainEvents::withoutPublishing(fn () => $this->synchronise());
+```
+
+The switch is static, so in long-running processes (queue workers, Octane) make sure it is enabled again when the work
+that disabled it finishes. With the deprecated `ModelObserver`, do not change it in the middle of a write (between its
+`creating`/`updating`/`deleting` and its `created`/`updated`/`deleted` events).
+
 ### Custom middlewares
 
 The middlewares should implement the `Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface` interface.

@@ -6,6 +6,7 @@ namespace Softonic\TransactionalEventPublisher\Observers;
 
 use Illuminate\Database\Eloquent\Model;
 use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
+use Softonic\TransactionalEventPublisher\DomainEvents;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
@@ -35,7 +36,7 @@ class ModelObserver
      */
     public function creating(Model $model): void
     {
-        if ($this->isHandledByTrait($model)) {
+        if ($this->isSkipped($model)) {
             return;
         }
 
@@ -49,7 +50,7 @@ class ModelObserver
      */
     public function created(Model $model): bool
     {
-        if ($this->isHandledByTrait($model)) {
+        if ($this->isSkipped($model)) {
             return true;
         }
 
@@ -63,7 +64,7 @@ class ModelObserver
      */
     public function updating(Model $model): void
     {
-        if ($this->isHandledByTrait($model)) {
+        if ($this->isSkipped($model)) {
             return;
         }
 
@@ -77,7 +78,7 @@ class ModelObserver
      */
     public function updated(Model $model): bool
     {
-        if ($this->isHandledByTrait($model)) {
+        if ($this->isSkipped($model)) {
             return true;
         }
 
@@ -91,7 +92,7 @@ class ModelObserver
      */
     public function deleting(Model $model): void
     {
-        if ($this->isHandledByTrait($model)) {
+        if ($this->isSkipped($model)) {
             return;
         }
 
@@ -105,7 +106,7 @@ class ModelObserver
      */
     public function deleted(Model $model): bool
     {
-        if ($this->isHandledByTrait($model)) {
+        if ($this->isSkipped($model)) {
             return true;
         }
 
@@ -127,6 +128,15 @@ class ModelObserver
         }
 
         $connection->commit();
+    }
+
+    /**
+     * Models using the PublishesDomainEvents trait are already handled by the DomainEventObserver, and nothing is
+     * done while publishing is disabled through DomainEvents.
+     */
+    private function isSkipped(Model $model): bool
+    {
+        return !DomainEvents::isEnabled() || $this->isHandledByTrait($model);
     }
 
     /**

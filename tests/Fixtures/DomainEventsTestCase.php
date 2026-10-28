@@ -6,6 +6,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Override;
+use Softonic\TransactionalEventPublisher\DomainEvents;
 use Softonic\TransactionalEventPublisher\ServiceProvider;
 use Softonic\TransactionalEventPublisher\TestCase;
 
@@ -67,6 +68,14 @@ abstract class DomainEventsTestCase extends TestCase
             $table->integer('id')->primary();
             $table->string('name')->unique();
         });
+    }
+
+    #[Override]
+    protected function tearDown(): void
+    {
+        DomainEvents::enable();
+
+        parent::tearDown();
     }
 
     protected function transactionLevel(): int
