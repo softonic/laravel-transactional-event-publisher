@@ -3,6 +3,12 @@ parameters:
 	paths:
 		- src
 	ignoreErrors:
+		# The trait is used by the consumers' models, not inside the library.
+		- identifier: trait.unused
+		# The routing key fields are read from the message implementation (see @property-read in the interface).
+		-
+			identifier: property.notFound
+			path: src/Services/Amqp.php
 		- '#Call to an undefined static method Softonic\\TransactionalEventPublisher\\Models\\DomainEvent::insert\(\)#'
 		- '#While loop condition is always true#'
 		- '#Negated boolean expression is always true#'

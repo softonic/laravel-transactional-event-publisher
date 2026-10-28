@@ -6,6 +6,9 @@ use PhpAmqpLib\Connection\AMQPConnectionConfig;
 
 class AmqpConnectionConfigBuilder
 {
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(private readonly array $config)
     {
     }
@@ -41,6 +44,7 @@ class AmqpConnectionConfigBuilder
     }
 
     /**
+     * @param array<string, mixed> $options
      * @return resource
      */
     private function createSslContext(array $options)

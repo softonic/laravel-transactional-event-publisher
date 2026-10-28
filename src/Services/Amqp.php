@@ -14,6 +14,9 @@ class Amqp
 
     private ?AbstractConnection $connection = null;
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(private readonly array $config)
     {
     }

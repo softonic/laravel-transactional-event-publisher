@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Softonic\TransactionalEventPublisher\CustomEventMessage;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 
+/**
+ * @extends Factory<DomainEvent>
+ */
 class DomainEventFactory extends Factory
 {
     /**
