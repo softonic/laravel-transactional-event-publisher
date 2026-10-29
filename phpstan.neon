@@ -9,6 +9,10 @@ parameters:
 		-
 			identifier: property.notFound
 			path: src/Services/Amqp.php
+		# The options have a string default value, so option() always returns a string for them.
+		-
+			identifier: assign.propertyType
+			path: src/Console/Commands/EmitEvents.php
 		- '#Call to an undefined static method Softonic\\TransactionalEventPublisher\\Models\\DomainEvent::insert\(\)#'
 		- '#While loop condition is always true#'
 		- '#Negated boolean expression is always true#'

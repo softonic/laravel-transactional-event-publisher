@@ -59,13 +59,8 @@ class EmitEvents extends Command
     {
         $this->eventPublisherMiddleware = $eventPublisherMiddleware;
 
-        /** @var string $dbConnection */
-        $dbConnection = $this->option('dbConnection');
-        /** @var string $dbConnectionUnbuffered */
-        $dbConnectionUnbuffered = $this->option('dbConnectionUnbuffered');
-
-        $this->dbConnection = $dbConnection;
-        $this->dbConnectionUnbuffered = $dbConnectionUnbuffered;
+        $this->dbConnection = $this->option('dbConnection');
+        $this->dbConnectionUnbuffered = $this->option('dbConnectionUnbuffered');
         $this->batchSize = (int)$this->option('batchSize');
 
         $this->sendBatches();
