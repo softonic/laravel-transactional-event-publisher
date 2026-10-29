@@ -101,13 +101,29 @@ return [
 
 ### Registering Models
 
-To choose what models should send domain events, you need to attach the `\Softonic\TransactionalEventPublisher\ModelObserver` observer class.
+To choose what models should send domain events, attach the `\Softonic\TransactionalEventPublisher\Observers\ModelObserver`
+observer class and add the `\Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents` trait to the models.
+
+The observer stores the domain event of each insert, update and delete. The trait runs the write together with the storage
+of its event in the same transaction: if anything fails (the query, the event store or a listener halting the operation),
+only that transaction level is rolled back, so the caller's transaction is never left open. The trait alone does not
+publish anything: without the observer, the writes still run in their transaction but no event is stored.
+
+Using the trait in a base model is enough to cover all the models extending it.
 
 Example:
 
-```
-...
+```php
+use Illuminate\Database\Eloquent\Model;
+use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
 
+abstract class BaseModel extends Model
+{
+    use PublishesDomainEvents;
+}
+```
+
+```php
 use App\Models\Post as MyModel;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
@@ -120,9 +136,64 @@ class EventServiceProvider extends ServiceProvider
 
         MyModel::observe(ModelObserver::class);
     }
-    ...
 }
 ```
+
+#### Upgrading to 11.1
+
+Observing a model that does not use the trait is deprecated. It keeps working as before: the observer opens a
+transaction level in the `creating`/`updating`/`deleting` events and closes it once the event is stored, so the level is
+left open when the query fails. It also triggers an `E_USER_DEPRECATED` once per process. To migrate, add the
+`PublishesDomainEvents` trait to the models (or to their base model) and keep the `observe(ModelObserver::class)` calls.
+
+If the model overrides `performInsert()`, `performUpdate()` or `delete()`, the method of the model takes precedence over
+the trait one. Import the trait method with an alias and call it from the override, so the write still runs in its
+transaction:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
+
+abstract class BaseModel extends Model
+{
+    use PublishesDomainEvents {
+        performInsert as transactionalPerformInsert;
+    }
+
+    protected function performInsert(Builder $query)
+    {
+        try {
+            return $this->transactionalPerformInsert($query);
+        } catch (UniqueConstraintViolationException $exception) {
+            // The transaction level of the insert is already rolled back here.
+            ...
+        }
+    }
+}
+```
+
+#### Disabling the publication of events
+
+`\Softonic\TransactionalEventPublisher\DomainEvents` disables the storage of domain events for the whole process, for
+example during a bulk synchronisation. It is checked each time an event is going to be stored, so it works regardless of
+when the observers are registered. While it is disabled, the `ModelObserver` neither opens transaction levels nor stores
+events, and the writes of models using the trait still run in their own transaction.
+
+```php
+use Softonic\TransactionalEventPublisher\DomainEvents;
+
+DomainEvents::disable();
+// ...
+DomainEvents::enable();
+
+// Or only for a callback, restoring the previous state afterwards (even if it throws):
+DomainEvents::withoutPublishing(fn () => $this->synchronise());
+```
+
+The switch is static, so in long-running processes (queue workers, Octane) make sure it is enabled again when the work
+that disabled it finishes. On models without the trait, do not change it in the middle of a write (between the
+`creating`/`updating`/`deleting` and the `created`/`updated`/`deleted` events).
 
 ### Custom middlewares
 

@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\LazyCollection;
 use InvalidArgumentException;
+use Override;
 use RuntimeException;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
@@ -31,11 +32,13 @@ class EmitEvents extends Command
      */
     private const int BASE_DELAY_FOR_NO_EVENTS = 1000;
 
+    #[Override]
     protected $signature = 'event-sourcing:emit
         {--dbConnection=mysql : Indicate the database connection to use }
         {--dbConnectionUnbuffered=mysql-unbuffered : Indicate the unbuffered database connection to use (MySQL unbuffered for better performance when large amount of events)}
         {--batchSize=100 : Indicate the amount of events to be sent per publish. Increase for higher throughput}';
 
+    #[Override]
     protected $description = 'Continuously emits domain events in batches';
 
     public EventStoreMiddlewareInterface $eventPublisherMiddleware;
@@ -105,6 +108,9 @@ class EmitEvents extends Command
         }
     }
 
+    /**
+     * @param LazyCollection<int, DomainEvent> $events
+     */
     private function sendEvents(LazyCollection $events): void
     {
         // Transform the events to the format expected by the event publisher
@@ -137,7 +143,7 @@ class EmitEvents extends Command
 
         ++$this->attemptForErrors;
 
-        sleep($delay);
+        sleep((int) $delay);
     }
 
     private function waitExponentialBackOffForNoEvents(): void
@@ -147,6 +153,6 @@ class EmitEvents extends Command
 
         ++$this->attemptForNoEvents;
 
-        usleep($delay);
+        usleep((int) $delay);
     }
 }
