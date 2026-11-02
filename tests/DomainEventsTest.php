@@ -6,9 +6,7 @@ use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Softonic\TransactionalEventPublisher\Fixtures\DomainEventsTestCase;
-use Softonic\TransactionalEventPublisher\Fixtures\LegacyModel;
 use Softonic\TransactionalEventPublisher\Fixtures\PublishingModel;
-use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
 use Throwable;
 
 class DomainEventsTest extends DomainEventsTestCase
@@ -73,50 +71,6 @@ class DomainEventsTest extends DomainEventsTestCase
         self::assertTrue(DomainEvents::isEnabled());
         self::assertSame(['created'], $this->middleware->storedEventTypes());
         self::assertSame(2, DB::table('publishing_models')->count());
-    }
-
-    #[Test]
-    public function whenDisabledTheDeprecatedObserverNeitherStoresEventsNorOpensLevels(): void
-    {
-        LegacyModel::observe(ModelObserver::class);
-        DomainEvents::disable();
-        $levels = [];
-
-        DB::transaction(function () use (&$levels): void {
-            $model = LegacyModel::create(['id' => 1, 'name' => 'legacy']);
-            $levels[] = $this->transactionLevel();
-            $model->name = 'legacy updated';
-            $model->save();
-            $levels[] = $this->transactionLevel();
-            LegacyModel::create(['id' => 2, 'name' => 'another legacy'])->delete();
-            $levels[] = $this->transactionLevel();
-        });
-
-        self::assertSame([1, 1, 1], $levels);
-        self::assertSame([], $this->middleware->storedMessages);
-        self::assertSame(0, $this->transactionLevel());
-        self::assertSame('legacy updated', DB::table('legacy_models')->where('id', 1)->value('name'));
-        self::assertSame(1, DB::table('legacy_models')->count());
-    }
-
-    #[Test]
-    public function whenReEnabledTheDeprecatedObserverStoresEventsAgain(): void
-    {
-        LegacyModel::observe(ModelObserver::class);
-        DomainEvents::disable();
-        LegacyModel::create(['id' => 1, 'name' => 'silent']);
-
-        DomainEvents::enable();
-        set_error_handler(static fn (): bool => true, E_USER_DEPRECATED);
-        try {
-            LegacyModel::create(['id' => 2, 'name' => 'published']);
-        } finally {
-            restore_error_handler();
-        }
-
-        self::assertSame(['created'], $this->middleware->storedEventTypes());
-        self::assertSame(0, $this->transactionLevel());
-        self::assertSame(2, DB::table('legacy_models')->count());
     }
 
     #[Test]

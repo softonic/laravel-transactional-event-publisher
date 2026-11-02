@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
 use Softonic\TransactionalEventPublisher\DomainEvents;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
+use Softonic\TransactionalEventPublisher\Exceptions\ModelWithoutPublishesDomainEventsException;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageBuilderInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
@@ -15,14 +16,11 @@ use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterfac
 /**
  * Stores the domain event of every insert, update and delete of the observed models.
  *
- * On models using the PublishesDomainEvents trait it only stores the event: the trait runs the write and this
- * observer in the same transaction. On models without the trait it keeps the deprecated behaviour of opening a
- * transaction level in the "-ing" events, which is left open when the query fails.
+ * The observed models must use the PublishesDomainEvents trait, which runs the write and this observer in the same
+ * transaction. Writes of observed models without the trait are rejected before they reach the database.
  */
 class ModelObserver
 {
-    private static bool $deprecationTriggered = false;
-
     /**
      * @var EventStoreMiddlewareInterface[]
      */
@@ -40,14 +38,18 @@ class ModelObserver
 
     /**
      * Handles the model creating event.
+     *
+     * @throws ModelWithoutPublishesDomainEventsException
      */
     public function creating(Model $model): void
     {
-        $this->beginLegacyTransaction($model);
+        $this->ensureModelUsesTrait($model);
     }
 
     /**
      * Handles the model created event.
+     *
+     * @throws EventStoreFailedException
      */
     public function created(Model $model): bool
     {
@@ -58,14 +60,18 @@ class ModelObserver
 
     /**
      * Handles the model updating event.
+     *
+     * @throws ModelWithoutPublishesDomainEventsException
      */
     public function updating(Model $model): void
     {
-        $this->beginLegacyTransaction($model);
+        $this->ensureModelUsesTrait($model);
     }
 
     /**
      * Handles the model updated event.
+     *
+     * @throws EventStoreFailedException
      */
     public function updated(Model $model): bool
     {
@@ -76,14 +82,18 @@ class ModelObserver
 
     /**
      * Handles the model deleting event.
+     *
+     * @throws ModelWithoutPublishesDomainEventsException
      */
     public function deleting(Model $model): void
     {
-        $this->beginLegacyTransaction($model);
+        $this->ensureModelUsesTrait($model);
     }
 
     /**
      * Handles the model deleted event.
+     *
+     * @throws EventStoreFailedException
      */
     public function deleted(Model $model): bool
     {
@@ -93,7 +103,7 @@ class ModelObserver
     }
 
     /**
-     * Nothing is done while publishing is disabled through DomainEvents.
+     * Nothing is stored while publishing is disabled through DomainEvents.
      *
      * @throws EventStoreFailedException
      */
@@ -103,30 +113,6 @@ class ModelObserver
             return;
         }
 
-        if ($this->usesTrait($model)) {
-            $this->storeEventMessage($model, $modelEvent);
-
-            return;
-        }
-
-        $connection = $model->getConnection();
-
-        try {
-            $this->storeEventMessage($model, $modelEvent);
-        } catch (EventStoreFailedException $exception) {
-            $connection->rollBack();
-
-            throw $exception;
-        }
-
-        $connection->commit();
-    }
-
-    /**
-     * @throws EventStoreFailedException
-     */
-    private function storeEventMessage(Model $model, string $modelEvent): void
-    {
         $message = $this->builder->build($model, $modelEvent);
 
         if (!$this->executeMiddlewares($message)) {
@@ -145,35 +131,12 @@ class ModelObserver
     }
 
     /**
-     * @deprecated since 11.1.0, add the PublishesDomainEvents trait to the model (or its base model) instead.
+     * @throws ModelWithoutPublishesDomainEventsException
      */
-    private function beginLegacyTransaction(Model $model): void
+    private function ensureModelUsesTrait(Model $model): void
     {
-        if (!DomainEvents::isEnabled() || $this->usesTrait($model)) {
-            return;
+        if (!in_array(PublishesDomainEvents::class, class_uses_recursive($model), true)) {
+            throw ModelWithoutPublishesDomainEventsException::forModel($model::class);
         }
-
-        $this->triggerDeprecation();
-
-        $model->getConnection()->beginTransaction();
-    }
-
-    private function usesTrait(Model $model): bool
-    {
-        return in_array(PublishesDomainEvents::class, class_uses_recursive($model), true);
-    }
-
-    private function triggerDeprecation(): void
-    {
-        if (self::$deprecationTriggered) {
-            return;
-        }
-
-        self::$deprecationTriggered = true;
-        trigger_error(
-            'Observing a model without the ' . PublishesDomainEvents::class . ' trait with ' . self::class
-            . ' is deprecated since 11.1.0, add the trait to the model.',
-            E_USER_DEPRECATED
-        );
     }
 }

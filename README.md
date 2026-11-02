@@ -139,12 +139,17 @@ class EventServiceProvider extends ServiceProvider
 }
 ```
 
-#### Upgrading to 11.1
+#### Upgrading to 12.0
 
-Observing a model that does not use the trait is deprecated. It keeps working as before: the observer opens a
-transaction level in the `creating`/`updating`/`deleting` events and closes it once the event is stored, so the level is
-left open when the query fails. It also triggers an `E_USER_DEPRECATED` once per process. To migrate, add the
-`PublishesDomainEvents` trait to the models (or to their base model) and keep the `observe(ModelObserver::class)` calls.
+The observed models must use the `PublishesDomainEvents` trait. The behaviour deprecated in 11.1 (the observer opening a
+transaction level in the `creating`/`updating`/`deleting` events, which was left open when the query failed) is
+removed: any insert, update or delete of an observed model without the trait now throws a
+`\Softonic\TransactionalEventPublisher\Exceptions\ModelWithoutPublishesDomainEventsException` before reaching the
+database, also while publishing is disabled through `DomainEvents`.
+
+To migrate, add the `PublishesDomainEvents` trait to the models (or to their base model) and keep the
+`observe(ModelObserver::class)` calls. Projects already migrated on 11.1 (no `E_USER_DEPRECATED` from the observer)
+only need to require `^12.0`.
 
 If the model overrides `performInsert()`, `performUpdate()` or `delete()`, the method of the model takes precedence over
 the trait one. Import the trait method with an alias and call it from the override, so the write still runs in its
@@ -177,8 +182,8 @@ abstract class BaseModel extends Model
 
 `\Softonic\TransactionalEventPublisher\DomainEvents` disables the storage of domain events for the whole process, for
 example during a bulk synchronisation. It is checked each time an event is going to be stored, so it works regardless of
-when the observers are registered. While it is disabled, the `ModelObserver` neither opens transaction levels nor stores
-events, and the writes of models using the trait still run in their own transaction.
+when the observers are registered. While it is disabled, the `ModelObserver` stores no events and the writes of the
+models still run in their own transaction.
 
 ```php
 use Softonic\TransactionalEventPublisher\DomainEvents;
@@ -192,8 +197,7 @@ DomainEvents::withoutPublishing(fn () => $this->synchronise());
 ```
 
 The switch is static, so in long-running processes (queue workers, Octane) make sure it is enabled again when the work
-that disabled it finishes. On models without the trait, do not change it in the middle of a write (between the
-`creating`/`updating`/`deleting` and the `created`/`updated`/`deleted` events).
+that disabled it finishes.
 
 ### Custom middlewares
 

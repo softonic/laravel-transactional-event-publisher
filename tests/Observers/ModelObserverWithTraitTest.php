@@ -2,6 +2,7 @@
 
 namespace Softonic\TransactionalEventPublisher\Observers;
 
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -9,6 +10,7 @@ use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Fixtures\DomainEventsTestCase;
 use Softonic\TransactionalEventPublisher\Fixtures\PublishingModel;
 use Softonic\TransactionalEventPublisher\Fixtures\SpyEventStoreMiddleware;
+use Throwable;
 
 /**
  * The ModelObserver on models using the PublishesDomainEvents trait: it only stores the event, the trait manages the
@@ -129,29 +131,65 @@ class ModelObserverWithTraitTest extends DomainEventsTestCase
     }
 
     #[Test]
-    public function whenTheWriteIsAboutToHappenItNeverOpensTransactionLevelsNorTriggersADeprecation(): void
+    public function whenTheWriteIsAboutToHappenItNeitherOpensTransactionLevelsNorStoresEvents(): void
     {
         $model = new PublishingModel(['id' => 1, 'name' => 'model']);
         $observer = $this->app->make(ModelObserver::class);
         $levels = [];
-        $deprecations = 0;
-        set_error_handler(static function () use (&$deprecations): bool {
-            ++$deprecations;
 
-            return true;
-        }, E_USER_DEPRECATED);
-
-        try {
-            foreach (['creating', 'updating', 'deleting'] as $modelEvent) {
-                $observer->{$modelEvent}($model);
-                $levels[] = $this->transactionLevel();
-            }
-        } finally {
-            restore_error_handler();
+        foreach (['creating', 'updating', 'deleting'] as $modelEvent) {
+            $observer->{$modelEvent}($model);
+            $levels[] = $this->transactionLevel();
         }
 
         self::assertSame([0, 0, 0], $levels);
-        self::assertSame(0, $deprecations);
         self::assertSame(0, $this->builder->buildCalls);
+    }
+
+    #[Test]
+    public function whenObservingAModelWithTheTraitItStoresOneEventPerWriteWithoutOpeningExtraLevels(): void
+    {
+        $levels = [];
+
+        DB::transaction(function () use (&$levels): void {
+            $levels[] = $this->transactionLevel();
+            $model = PublishingModel::create(['id' => 1, 'name' => 'created']);
+            $levels[] = $this->transactionLevel();
+            $model->name = 'updated';
+            $model->save();
+            $levels[] = $this->transactionLevel();
+            $model->delete();
+            $levels[] = $this->transactionLevel();
+        });
+
+        self::assertSame([1, 1, 1, 1], $levels);
+        self::assertSame(0, $this->transactionLevel());
+        self::assertSame(['created', 'updated', 'deleted'], $this->middleware->storedEventTypes());
+        self::assertCount(3, $this->middleware->transactionLevelsWhenStoring);
+    }
+
+    #[Test]
+    public function whenObservingAModelWithTheTraitAndTheInsertFailsNoTransactionIsLeftOpen(): void
+    {
+        $this->seedPublishingModel(1, 'existing');
+        $levelInsideAfterFailure = null;
+        $caught = null;
+
+        try {
+            DB::transaction(function () use (&$levelInsideAfterFailure): void {
+                try {
+                    PublishingModel::create(['id' => 2, 'name' => 'existing']);
+                } finally {
+                    $levelInsideAfterFailure = $this->transactionLevel();
+                }
+            });
+        } catch (Throwable $exception) {
+            $caught = $exception;
+        }
+
+        self::assertInstanceOf(UniqueConstraintViolationException::class, $caught);
+        self::assertSame(1, $levelInsideAfterFailure);
+        self::assertSame(0, $this->transactionLevel());
+        self::assertSame([], $this->middleware->storedMessages);
     }
 }
