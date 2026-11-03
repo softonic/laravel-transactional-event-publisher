@@ -101,17 +101,15 @@ return [
 
 ### Registering Models
 
-To choose what models should send domain events, attach the `\Softonic\TransactionalEventPublisher\Observers\ModelObserver`
-observer class and add the `\Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents` trait to the models.
+Add the `\Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents` trait to the models that publish domain
+events. Nothing else has to be registered: the trait stores the `created`, `updated` and `deleted` event of each insert,
+update (including `increment()`/`decrement()`) and delete of the model. Models without the trait publish nothing.
 
-The observer stores the domain event of each insert, update and delete. The trait runs the write together with the storage
-of its event in the same transaction: if anything fails (the query, the event store or a listener halting the operation),
-only that transaction level is rolled back, so the caller's transaction is never left open. The trait alone does not
-publish anything: without the observer, the writes still run in their transaction but no event is stored.
+Each write runs in its own transaction, together with the storage of its event: if anything fails (the query, the
+message builder, the event store or a listener halting the operation), only that transaction level is rolled back, so the
+caller's transaction is never left open.
 
-Using the trait in a base model is enough to cover all the models extending it.
-
-Example:
+Using the trait in a base model is enough to cover all the models extending it, each one publishing with its own name.
 
 ```php
 use Illuminate\Database\Eloquent\Model;
@@ -123,31 +121,16 @@ abstract class BaseModel extends Model
 }
 ```
 
-```php
-use App\Models\Post as MyModel;
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
+The event is built and stored by `\Softonic\TransactionalEventPublisher\Services\EventStore`, resolved from the container
+on every write, so a project can replace it with its own binding.
 
-class EventServiceProvider extends ServiceProvider
-{
-    public function boot()
-    {
-        parent::boot();
+The listeners of the trait are registered when the model boots (on its first instantiation), so they run before the
+listeners and observers registered later for the same events. The model must boot once the event dispatcher is set,
+as any Eloquent listener: do not instantiate it in the `register()` of a service provider. Writes made without model
+events (`saveQuietly()`, `Model::withoutEvents()`) store no event.
 
-        MyModel::observe(ModelObserver::class);
-    }
-}
-```
-
-#### Upgrading to 11.1
-
-Observing a model that does not use the trait is deprecated. It keeps working as before: the observer opens a
-transaction level in the `creating`/`updating`/`deleting` events and closes it once the event is stored, so the level is
-left open when the query fails. It also triggers an `E_USER_DEPRECATED` once per process. To migrate, add the
-`PublishesDomainEvents` trait to the models (or to their base model) and keep the `observe(ModelObserver::class)` calls.
-
-If the model overrides `performInsert()`, `performUpdate()` or `delete()`, the method of the model takes precedence over
-the trait one. Import the trait method with an alias and call it from the override, so the write still runs in its
+If the model overrides `performInsert()`, `performUpdate()`, `incrementOrDecrement()` or `delete()`, the method of the
+model takes precedence over the trait one. Import the trait method with an alias and call it from the override, so the write still runs in its
 transaction:
 
 ```php
@@ -173,12 +156,25 @@ abstract class BaseModel extends Model
 }
 ```
 
+#### Upgrading to 12.0
+
+The trait is now the only piece needed to publish: `\Softonic\TransactionalEventPublisher\Observers\ModelObserver` is
+removed.
+
+- Remove every `observe(ModelObserver::class)` call and `#[ObservedBy(ModelObserver::class)]` attribute. Any one left
+  fails because the class no longer exists.
+- Add the trait to every model that was observed, or to its base model. A model that was observed without the trait now
+  publishes nothing.
+- Keep the trait only in the models that publish: a model that used the trait without being observed now publishes.
+- If the project rebound `ModelObserver` in the container, rebind `EventStore` instead.
+- The configuration, the messages, the middlewares and the `EmitEvents` command do not change.
+
 #### Disabling the publication of events
 
 `\Softonic\TransactionalEventPublisher\DomainEvents` disables the storage of domain events for the whole process, for
 example during a bulk synchronisation. It is checked each time an event is going to be stored, so it works regardless of
-when the observers are registered. While it is disabled, the `ModelObserver` neither opens transaction levels nor stores
-events, and the writes of models using the trait still run in their own transaction.
+when the models are booted. While it is disabled no event is stored, and the writes of the models still run in their own
+transaction.
 
 ```php
 use Softonic\TransactionalEventPublisher\DomainEvents;
@@ -192,8 +188,7 @@ DomainEvents::withoutPublishing(fn () => $this->synchronise());
 ```
 
 The switch is static, so in long-running processes (queue workers, Octane) make sure it is enabled again when the work
-that disabled it finishes. On models without the trait, do not change it in the middle of a write (between the
-`creating`/`updating`/`deleting` and the `created`/`updated`/`deleted` events).
+that disabled it finishes.
 
 ### Custom middlewares
 

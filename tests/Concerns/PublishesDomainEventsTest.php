@@ -12,8 +12,11 @@ use RuntimeException;
 use Softonic\TransactionalEventPublisher\Exceptions\EventStoreFailedException;
 use Softonic\TransactionalEventPublisher\Fixtures\AdoptingPublishingModel;
 use Softonic\TransactionalEventPublisher\Fixtures\DomainEventsTestCase;
+use Softonic\TransactionalEventPublisher\Fixtures\NonPublishingModel;
 use Softonic\TransactionalEventPublisher\Fixtures\PublishingModel;
-use Softonic\TransactionalEventPublisher\Fixtures\UnobservedPublishingModel;
+use Softonic\TransactionalEventPublisher\Fixtures\SoftDeletingPublishingModel;
+use Softonic\TransactionalEventPublisher\Fixtures\SpyEventStoreMiddleware;
+use Softonic\TransactionalEventPublisher\Services\EventStore;
 use Throwable;
 
 class PublishesDomainEventsTest extends DomainEventsTestCase
@@ -505,24 +508,211 @@ class PublishesDomainEventsTest extends DomainEventsTestCase
     }
 
     #[Test]
-    public function withoutTheModelObserverAttachedTheWritesRunInTheirTransactionButNoEventIsStored(): void
+    public function whenAModelDoesNotUseTheTraitItsWritesStoreNoEvent(): void
     {
+        $model = NonPublishingModel::create(['id' => 1, 'name' => 'created']);
+        $model->name = 'updated';
+        $model->save();
+        $model->increment('counter');
+
+        $model->delete();
+
+        self::assertSame([], $this->middleware->storedMessages);
+        self::assertSame(0, $this->builder->buildCalls);
+        self::assertSame(0, $this->transactionLevel());
+        self::assertSame(0, DB::table('non_publishing_models')->count());
+    }
+
+    #[Test]
+    public function whenAModelWithTheTraitAndNoObserverGoesThroughEveryWriteExactlyOneEventIsStoredPerWrite(): void
+    {
+        $model = PublishingModel::create(['id' => 1, 'name' => 'created']);
+        $model->name = 'updated';
+        $model->save();
+        $model->increment('counter');
+        $model->decrement('counter');
+
+        $model->delete();
+
+        self::assertSame(
+            ['created', 'updated', 'updated', 'updated', 'deleted'],
+            $this->middleware->storedEventTypes()
+        );
+        self::assertSame(5, $this->builder->buildCalls);
+        foreach ($this->middleware->storedMessages as $message) {
+            self::assertSame(PublishingModel::class, $message->toArray()['modelName']);
+            self::assertSame(1, $message->toArray()['modelKey']);
+        }
+
+        self::assertCount(5, $this->middleware->transactionLevelsWhenStoring);
+        foreach ($this->middleware->transactionLevelsWhenStoring as $level) {
+            self::assertSame(1, $level, 'Each event must be stored inside the transaction opened for its write.');
+        }
+
+        self::assertSame(0, $this->transactionLevel());
+        self::assertFalse($this->publishingModelExists(1));
+    }
+
+    #[Test]
+    public function whenSavingQuietlyNoEventIsStoredAndTheCallerLevelIsPreserved(): void
+    {
+        $this->seedPublishingModel(1, 'existing');
         $levels = [];
 
         DB::transaction(function () use (&$levels): void {
-            $model = UnobservedPublishingModel::create(['id' => 1, 'name' => 'created']);
+            new PublishingModel(['id' => 2, 'name' => 'quiet insert'])->saveQuietly();
             $levels[] = $this->transactionLevel();
-            $model->name = 'updated';
-            $model->save();
-            $model->increment('counter');
-            $model->delete();
+            $model = PublishingModel::findOrFail(1);
+            $model->name = 'quiet update';
+            $model->saveQuietly();
+            $levels[] = $this->transactionLevel();
+            $model->deleteQuietly();
             $levels[] = $this->transactionLevel();
         });
 
-        self::assertSame([1, 1], $levels);
+        self::assertSame([1, 1, 1], $levels);
+        self::assertSame(0, $this->transactionLevel());
         self::assertSame([], $this->middleware->storedMessages);
         self::assertSame(0, $this->builder->buildCalls);
+        self::assertSame('quiet insert', $this->publishingModelName(2));
         self::assertFalse($this->publishingModelExists(1));
+    }
+
+    #[Test]
+    public function whenWritingWithoutModelEventsNoEventIsStoredAndNoTransactionIsLeftOpen(): void
+    {
+        $levels = [];
+
+        PublishingModel::withoutEvents(function () use (&$levels): void {
+            $model = PublishingModel::create(['id' => 1, 'name' => 'silent']);
+            $levels[] = $this->transactionLevel();
+            $model->name = 'silent update';
+            $model->save();
+            $model->increment('counter');
+            $levels[] = $this->transactionLevel();
+            PublishingModel::create(['id' => 2, 'name' => 'silent delete'])->delete();
+            $levels[] = $this->transactionLevel();
+        });
+
+        self::assertSame([0, 0, 0], $levels);
+        self::assertSame([], $this->middleware->storedMessages);
+        self::assertSame(0, $this->builder->buildCalls);
+        self::assertSame('silent update', $this->publishingModelName(1));
+        self::assertSame(1, DB::table('publishing_models')->where('id', 1)->value('counter'));
+        self::assertFalse($this->publishingModelExists(2));
+    }
+
+    #[Test]
+    public function whenSoftDeletingTheDeletedEventIsStoredAndTheRowIsKept(): void
+    {
+        $model = SoftDeletingPublishingModel::create(['id' => 1, 'name' => 'soft']);
+        $this->resetSpies();
+
+        $model->delete();
+
+        self::assertSame(['deleted'], $this->middleware->storedEventTypes());
+        self::assertSame(SoftDeletingPublishingModel::class, $this->middleware->storedMessages[0]->toArray()['modelName']);
+        self::assertSame([1], $this->middleware->transactionLevelsWhenStoring);
+        self::assertSame(0, $this->transactionLevel());
+        self::assertNotNull(DB::table('publishing_models')->where('id', 1)->value('deleted_at'));
+    }
+
+    #[Test]
+    public function whenRestoringASoftDeletedModelTheUpdatedEventIsStored(): void
+    {
+        $model = SoftDeletingPublishingModel::create(['id' => 1, 'name' => 'soft']);
+        $model->delete();
+        $this->resetSpies();
+
+        $model->restore();
+
+        self::assertSame(['updated'], $this->middleware->storedEventTypes());
+        self::assertSame([1], $this->middleware->transactionLevelsWhenStoring);
+        self::assertSame(0, $this->transactionLevel());
+        self::assertNull(DB::table('publishing_models')->where('id', 1)->value('deleted_at'));
+    }
+
+    #[Test]
+    public function whenForceDeletingTheDeletedEventIsStoredOnceAndTheRowIsRemoved(): void
+    {
+        $model = SoftDeletingPublishingModel::create(['id' => 1, 'name' => 'soft']);
+        $this->resetSpies();
+
+        $model->forceDelete();
+
+        self::assertSame(['deleted'], $this->middleware->storedEventTypes());
+        self::assertSame([1], $this->middleware->transactionLevelsWhenStoring);
+        self::assertSame(0, $this->transactionLevel());
+        self::assertFalse($this->publishingModelExists(1));
+    }
+
+    #[Test]
+    public function whenSoftDeletingAndTheEventStoreFailsInsideAnExternalTransactionTheSoftDeleteIsRolledBack(): void
+    {
+        $model = SoftDeletingPublishingModel::create(['id' => 1, 'name' => 'soft']);
+        $this->makeEventStoreFail('middlewareReturnsFalse');
+
+        [$caught, $levelInsideAfterFailure, $propagated] = $this->runFailingOperationInsideExternalTransaction(
+            static fn () => $model->delete()
+        );
+
+        self::assertInstanceOf(EventStoreFailedException::class, $caught);
+        self::assertSame($caught, $propagated);
+        self::assertSame(1, $levelInsideAfterFailure);
+        self::assertSame(0, $this->transactionLevel());
+        self::assertNull(DB::table('publishing_models')->where('id', 1)->value('deleted_at'));
+    }
+
+    #[Test]
+    public function theEventStoreIsResolvedFromTheContainerOnEveryWriteSoRebindingItIsHonoured(): void
+    {
+        $resolutions = 0;
+        $this->app->bind(EventStore::class, function () use (&$resolutions): EventStore {
+            ++$resolutions;
+
+            return new EventStore($this->middleware, $this->builder);
+        });
+        $model = PublishingModel::create(['id' => 1, 'name' => 'first binding']);
+        $model->name = 'still first binding';
+        $model->save();
+
+        $reboundMiddleware = new SpyEventStoreMiddleware();
+        $this->app->bind(EventStore::class, fn (): EventStore => new EventStore($reboundMiddleware, $this->builder));
+
+        $model->delete();
+
+        self::assertSame(2, $resolutions);
+        self::assertSame(['created', 'updated'], $this->middleware->storedEventTypes());
+        self::assertSame(['deleted'], $reboundMiddleware->storedEventTypes());
+        self::assertSame(0, $this->transactionLevel());
+    }
+
+    #[Test]
+    public function whenAnEventStoreInstanceIsRegisteredInTheContainerTheNextWriteUsesIt(): void
+    {
+        PublishingModel::create(['id' => 1, 'name' => 'default binding']);
+        $reboundMiddleware = new SpyEventStoreMiddleware();
+        $this->app->instance(EventStore::class, new EventStore($reboundMiddleware, $this->builder));
+
+        PublishingModel::create(['id' => 2, 'name' => 'instance binding']);
+
+        self::assertSame(['created'], $this->middleware->storedEventTypes());
+        self::assertSame(['created'], $reboundMiddleware->storedEventTypes());
+        self::assertSame(2, $reboundMiddleware->storedMessages[0]->toArray()['modelKey']);
+    }
+
+    #[Test]
+    public function theModelObserverClassIsRemoved(): void
+    {
+        self::assertFalse(class_exists('Softonic\\TransactionalEventPublisher\\Observers\\ModelObserver'));
+    }
+
+    private function resetSpies(): void
+    {
+        $this->middleware->storedMessages = [];
+        $this->middleware->transactionLevelsWhenStoring = [];
+
+        $this->builder->buildCalls = 0;
     }
 
     private function makeEventStoreFail(string $failureMode): void
