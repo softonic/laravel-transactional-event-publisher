@@ -2,13 +2,15 @@
 
 namespace Softonic\TransactionalEventPublisher;
 
+use Closure;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Softonic\TransactionalEventPublisher\Fixtures\DomainEventsTestCase;
-use Softonic\TransactionalEventPublisher\Fixtures\LegacyModel;
 use Softonic\TransactionalEventPublisher\Fixtures\PublishingModel;
-use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
+use Softonic\TransactionalEventPublisher\Services\EventStore;
 use Throwable;
 
 class DomainEventsTest extends DomainEventsTestCase
@@ -76,47 +78,56 @@ class DomainEventsTest extends DomainEventsTestCase
     }
 
     #[Test]
-    public function whenDisabledTheDeprecatedObserverNeitherStoresEventsNorOpensLevels(): void
+    public function whenDisabledTheEventStoreIsNotEvenResolved(): void
     {
-        LegacyModel::observe(ModelObserver::class);
-        DomainEvents::disable();
-        $levels = [];
-
-        DB::transaction(function () use (&$levels): void {
-            $model = LegacyModel::create(['id' => 1, 'name' => 'legacy']);
-            $levels[] = $this->transactionLevel();
-            $model->name = 'legacy updated';
-            $model->save();
-            $levels[] = $this->transactionLevel();
-            LegacyModel::create(['id' => 2, 'name' => 'another legacy'])->delete();
-            $levels[] = $this->transactionLevel();
+        $this->app->bind(EventStore::class, static function (): never {
+            self::fail('The EventStore must not be resolved while publishing is disabled.');
         });
+        DomainEvents::disable();
 
-        self::assertSame([1, 1, 1], $levels);
-        self::assertSame([], $this->middleware->storedMessages);
+        $model = PublishingModel::create(['id' => 1, 'name' => 'silent']);
+        $model->name = 'silent update';
+        $model->save();
+        $model->increment('counter');
+        $model->delete();
+
+        self::assertSame(0, $this->builder->buildCalls);
+        self::assertFalse($this->publishingModelExists(1));
         self::assertSame(0, $this->transactionLevel());
-        self::assertSame('legacy updated', DB::table('legacy_models')->where('id', 1)->value('name'));
-        self::assertSame(1, DB::table('legacy_models')->count());
+    }
+
+    /**
+     * @return array<string, array{string, Closure(): mixed}>
+     */
+    public static function writeProvider(): array
+    {
+        return [
+            'insert' => ['created', static fn () => PublishingModel::create(['id' => 2, 'name' => 'new'])],
+            'update' => ['updated', static fn () => PublishingModel::findOrFail(1)->update(['name' => 'updated'])],
+            'increment' => ['updated', static fn () => PublishingModel::findOrFail(1)->increment('counter')],
+            'decrement' => ['updated', static fn () => PublishingModel::findOrFail(1)->decrement('counter')],
+            'delete' => ['deleted', static fn () => PublishingModel::findOrFail(1)->delete()],
+        ];
     }
 
     #[Test]
-    public function whenReEnabledTheDeprecatedObserverStoresEventsAgain(): void
-    {
-        LegacyModel::observe(ModelObserver::class);
+    #[DataProvider('writeProvider')]
+    public function whenDisabledWritesOfModelsWithTheTraitStillRunInTheirOwnTransaction(
+        string $modelEvent,
+        Closure $write
+    ): void {
+        $this->seedPublishingModel(1, 'existing');
         DomainEvents::disable();
-        LegacyModel::create(['id' => 1, 'name' => 'silent']);
+        $levelsInsideWrite = [];
+        Event::listen('eloquent.' . $modelEvent . ': ' . PublishingModel::class, function () use (&$levelsInsideWrite): void {
+            $levelsInsideWrite[] = $this->transactionLevel();
+        });
 
-        DomainEvents::enable();
-        set_error_handler(static fn (): bool => true, E_USER_DEPRECATED);
-        try {
-            LegacyModel::create(['id' => 2, 'name' => 'published']);
-        } finally {
-            restore_error_handler();
-        }
+        DB::transaction($write);
 
-        self::assertSame(['created'], $this->middleware->storedEventTypes());
+        self::assertSame([2], $levelsInsideWrite);
+        self::assertSame([], $this->middleware->storedMessages);
         self::assertSame(0, $this->transactionLevel());
-        self::assertSame(2, DB::table('legacy_models')->count());
     }
 
     #[Test]

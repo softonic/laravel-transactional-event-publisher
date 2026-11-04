@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Override;
 use Softonic\TransactionalEventPublisher\DomainEvents;
-use Softonic\TransactionalEventPublisher\Observers\ModelObserver;
 use Softonic\TransactionalEventPublisher\ServiceProvider;
 use Softonic\TransactionalEventPublisher\TestCase;
 
@@ -57,6 +56,7 @@ abstract class DomainEventsTestCase extends TestCase
             $table->integer('id')->primary();
             $table->string('name')->unique();
             $table->integer('counter')->default(0);
+            $table->softDeletes();
         });
 
         Schema::create('publishing_model_children', function (Blueprint $table): void {
@@ -65,13 +65,11 @@ abstract class DomainEventsTestCase extends TestCase
             $table->foreign('publishing_model_id')->references('id')->on('publishing_models');
         });
 
-        Schema::create('legacy_models', function (Blueprint $table): void {
+        Schema::create('non_publishing_models', function (Blueprint $table): void {
             $table->integer('id')->primary();
             $table->string('name')->unique();
+            $table->integer('counter')->default(0);
         });
-
-        PublishingModel::observe(ModelObserver::class);
-        AdoptingPublishingModel::observe(ModelObserver::class);
     }
 
     #[Override]

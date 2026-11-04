@@ -6,20 +6,17 @@ namespace Softonic\TransactionalEventPublisher\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
 use Override;
-use Softonic\TransactionalEventPublisher\Concerns\PublishesDomainEvents;
 
 /**
- * Uses the trait but nobody attaches the ModelObserver to it.
+ * A model that does not use the PublishesDomainEvents trait.
  */
-class UnobservedPublishingModel extends Model
+class NonPublishingModel extends Model
 {
-    use PublishesDomainEvents;
-
     #[Override]
     public $timestamps = false;
 
     #[Override]
-    protected $table = 'publishing_models';
+    protected $table = 'non_publishing_models';
 
     #[Override]
     protected $guarded = [];
