@@ -204,14 +204,15 @@ The builder should return a `EventMessageInterface` value object. It just needs 
 Considerations
 ==============
 
-This package begins a database transaction in the following Eloquent Model events:
-
-* creating
-* updating
-* deleting
-
-And commit the database transaction when the event store middleware stores the event message successfully. On the other hand, if the event store couldn't store the event message would be a database rollback for the two operations (Eloquent model write + event message storing).
-Take into account if an error occurs between the event of creating/updating/deleting and created/updated/deleted the transaction would remain started until the connection had been closed.
+- Each write of a model using the trait runs in its own transaction level together with the storage of its event. If
+  anything fails, only that level is rolled back and the exception reaches the caller, so no transaction is ever left
+  open.
+- If the write runs inside a transaction of the caller, the event is only final when that outer transaction commits.
+  With `DatabaseMiddleware` the stored event is rolled back with it. With `AmqpMiddleware` the message is already
+  published to the broker, so an outer rollback does not undo it. Use `DatabaseMiddleware` and the `EmitEvents` command
+  when the event must never be published without its write.
+- Only Eloquent model writes publish events. Query builder writes (`Model::query()->update()`, `insert()`, `upsert()`,
+  mass `delete()`...) and writes without model events (`saveQuietly()`, `Model::withoutEvents()`) store nothing.
 
 Testing
 -------
