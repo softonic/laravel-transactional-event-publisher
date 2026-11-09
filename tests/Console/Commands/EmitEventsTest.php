@@ -4,16 +4,20 @@ namespace Softonic\TransactionalEventPublisher\Console\Commands;
 
 use Closure;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 use Override;
 use phpmock\mockery\PHPMockery;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Softonic\TransactionalEventPublisher\EventStoreMiddlewares\AmqpMiddleware;
+use Softonic\TransactionalEventPublisher\Interfaces\EventMessageInterface;
 use Softonic\TransactionalEventPublisher\Interfaces\EventStoreMiddlewareInterface;
 use Softonic\TransactionalEventPublisher\Models\DomainEvent;
 use Softonic\TransactionalEventPublisher\ServiceProvider;
 use Softonic\TransactionalEventPublisher\TestCase;
+use Softonic\TransactionalEventPublisher\ValueObjects\EventMessage;
 
 class EmitEventsTest extends TestCase
 {
@@ -150,7 +154,8 @@ class EmitEventsTest extends TestCase
     #[Test]
     public function whenSendingABatchButThereIsAnErrorPublishingTheEventsItShouldLogAnAlertAndWaitAndDoNotDelete(): void
     {
-        $event = DomainEvent::factory()->create();
+        $message = $this->getOneMessage();
+        $event   = DomainEvent::factory()->create(['message' => $message]);
 
         $this->eventPublisherMiddleware->shouldReceive('store')
             ->once()
@@ -158,7 +163,26 @@ class EmitEventsTest extends TestCase
 
         Log::shouldReceive('alert')
             ->once()
-            ->with("The events couldn't be sent. Retrying...", ['eventMessages' => [$event['message']]]);
+            ->with(
+                "The events couldn't be sent. Retrying...",
+                [
+                    'messageCount'     => 1,
+                    'totalSizeInBytes' => strlen(serialize($message)),
+                    'lastEventId'      => $event['id'],
+                    'messages'         => [
+                        [
+                            'service'   => 'service',
+                            'eventType' => 'created',
+                            'modelName' => 'Model',
+                            'eventName' => 'ModelCreated',
+                            'createdAt' => '2026-08-04 10:00:00',
+                        ],
+                    ],
+                ]
+            );
+
+        Log::shouldReceive('warning')
+            ->once();
 
         PHPMockery::mock(__NAMESPACE__, 'sleep')
             ->once()
@@ -171,11 +195,108 @@ class EmitEventsTest extends TestCase
         self::assertDatabaseHas(DomainEvent::class, ['id' => $event['id']]);
     }
 
+    #[Test]
+    public function whenSendingABatchOfOversizedEventsFailsItShouldLogTheirSizeInsteadOfTheirPayload(): void
+    {
+        $payload = str_repeat('a', 100_000);
+        DomainEvent::factory()->create(['message' => $this->getOneMessage($payload)]);
+
+        $this->eventPublisherMiddleware->shouldReceive('store')
+            ->once()
+            ->andReturnFalse();
+
+        $loggedContext = null;
+        Log::shouldReceive('alert')
+            ->once()
+            ->with(Mockery::any(), Mockery::capture($loggedContext));
+
+        Log::shouldReceive('warning')
+            ->once();
+
+        PHPMockery::mock(__NAMESPACE__, 'sleep')
+            ->once()
+            ->with(1);
+
+        $this->emitEvents->sendBatch();
+
+        self::assertStringNotContainsString($payload, json_encode($loggedContext));
+        self::assertGreaterThan(100_000, $loggedContext['totalSizeInBytes']);
+    }
+
+    #[Test]
+    public function whenThereIsAnUnexpectedErrorRetrievingTheEventsItShouldLogItAndWait(): void
+    {
+        config()->set('database.connections.broken', ['driver' => 'broken']);
+        DB::extend('broken', function (): void {
+            throw new RuntimeException('The connection blew up');
+        });
+        $this->emitEvents->dbConnectionUnbuffered = 'broken';
+
+        $loggedMessage = null;
+        $loggedContext = null;
+        Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::capture($loggedMessage), Mockery::capture($loggedContext));
+
+        PHPMockery::mock(__NAMESPACE__, 'sleep')
+            ->once()
+            ->with(1);
+
+        $this->emitEvents->sendBatch();
+
+        self::assertStringContainsString('retrieving', $loggedMessage);
+        self::assertSame(RuntimeException::class, $loggedContext['exception']);
+        self::assertStringContainsString('The connection blew up', $loggedContext['error']);
+        self::assertSame(1, $loggedContext['attempt']);
+        self::assertEquals(2, $this->emitEvents->attemptForErrors);
+    }
+
+    #[Test]
+    public function whenThereIsAnUnexpectedErrorSendingTheEventsItShouldLogItAndWait(): void
+    {
+        $event = DomainEvent::factory()->create();
+
+        $this->eventPublisherMiddleware->shouldReceive('store')
+            ->once()
+            ->andThrow(new RuntimeException('The publisher blew up'));
+
+        $loggedMessage = null;
+        $loggedContext = null;
+        Log::shouldReceive('warning')
+            ->once()
+            ->with(Mockery::capture($loggedMessage), Mockery::capture($loggedContext));
+
+        PHPMockery::mock(__NAMESPACE__, 'sleep')
+            ->once()
+            ->with(1);
+
+        $this->emitEvents->sendBatch();
+
+        self::assertStringContainsString('send', $loggedMessage);
+        self::assertSame(RuntimeException::class, $loggedContext['exception']);
+        self::assertStringContainsString('The publisher blew up', $loggedContext['error']);
+        self::assertSame(1, $loggedContext['attempt']);
+        self::assertEquals(2, $this->emitEvents->attemptForErrors);
+        self::assertDatabaseHas(DomainEvent::class, ['id' => $event['id']]);
+    }
+
     private function whenEventsArePublished(Closure $closure): void
     {
         $this->eventPublisherMiddleware->shouldReceive('store')
             ->once()
             ->withArgs($closure)
             ->andReturnTrue();
+    }
+
+    private function getOneMessage(string $payload = 'value'): EventMessageInterface
+    {
+        return new EventMessage(
+            service: 'service',
+            eventType: 'created',
+            modelName: 'Model',
+            eventName: 'ModelCreated',
+            payload: ['field' => $payload],
+            createdAt: '2026-08-04 10:00:00',
+        );
     }
 }
